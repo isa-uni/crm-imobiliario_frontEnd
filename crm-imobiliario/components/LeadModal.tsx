@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lead, LeadStatus } from '@/types';
+import { Imovel, Lead, LeadStatus } from '@/types';
 import { origemOptions } from '@/service/origemOptions';
-import { getImoveisDisponiveis } from '@/lib/imoveis';
+import { imovelService } from '@/service/imovelService';
 import { X } from 'lucide-react';
 import InputMask from 'react-input-mask';
 
@@ -62,7 +62,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         status: editingLead.status,
         valorInteresse: editingLead.valorInteresse,
         // tipoImovel: editingLead.tipoImovel,
-        imovelId: editingLead.imovelId ?? null,
+        imovelId: editingLead.imovel?.id ?? null,
         observacao: editingLead.observacao || '',
         motivoDescarte: editingLead.motivoDescarte || '',
       });
@@ -82,7 +82,24 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     }
   }, [editingLead, isOpen]);
 
+  useEffect(() => {
+  const carregarImoveis = async () => {
+    try {
+      const data = await imovelService.getDisponivel();
+      setImoveis(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isOpen) {
+    carregarImoveis();
+  }
+}, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("formData antes de salvar 3", formData);
+    
     e.preventDefault();
 
     setLoading(true);
@@ -102,12 +119,15 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     }
   };
 
+  console.log("formData antes de salvar 1", formData);
+
   const handleImovelSelect = (imovelId: number | null) => {
+    console.log("formData antes de salvar 2", formData);
     if (!imovelId) {
       setFormData({
         ...formData,
         imovelId: null,
-        valorInteresse: 0
+        // valorInteresse: 0
       });
       return;
     }
@@ -118,7 +138,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
       setFormData({
         ...formData,
         imovelId,
-        valorInteresse: imovel.valorVenda,
+        // valorInteresse: imovel.valorVenda,
       });
     }
   };
@@ -277,8 +297,11 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 min="0"
                 // step="0.01"
                 value={formData.valorInteresse}
-                onChange={(e) => setFormData({ ...formData, valorInteresse: Number(e.target.value || 0) })}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setFormData({
+                  ...formData, 
+                  valorInteresse: Number(e.target.value || 0),
+                })}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
                 placeholder="350000"
               />
             </div>

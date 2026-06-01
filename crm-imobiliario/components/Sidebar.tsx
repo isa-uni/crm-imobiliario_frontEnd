@@ -156,7 +156,7 @@ export default function Sidebar({ children }: SidebarProps) {
                 {item.submenu ? (
                   // Item com submenu
                   <div>
-                    <button
+                    {/* <button
                       onClick={() => toggleSubmenu(item.id)}
                       className="w-full flex items-center justify-between px-3 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                     >
@@ -169,10 +169,10 @@ export default function Sidebar({ children }: SidebarProps) {
                       ) : (
                         <ChevronRight size={16} />
                       )}
-                    </button>
+                    </button> */}
                     
                     {/* Submenu */}
-                    {openSubmenu === item.id && (
+                    {/* {openSubmenu === item.id && (
                       <ul className="ml-6 mt-1 space-y-1">
                         {item.submenu.map((subItem) => (
                           <li key={subItem.path}>
@@ -194,7 +194,7 @@ export default function Sidebar({ children }: SidebarProps) {
                           </li>
                         ))}
                       </ul>
-                    )}
+                    )} */}
                   </div>
                 ) : (
                   // Item sem submenu

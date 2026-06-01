@@ -31,7 +31,7 @@ export default function PropertiesPage() {
   const [editingImovel, setEditingImovel] = useState<Imovel | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState<any>({});
-  const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'reservado' | 'vendido'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'vendido'>('all');
 
   const [formData, setFormData] = useState({
     titulo: '',
@@ -146,7 +146,7 @@ export default function PropertiesPage() {
   const handleDelete = async (id: number) => {
     if (confirm('Tem certeza que deseja excluir este imóvel?')) {
       try {
-      await imovelService.inativar(id); // ou delete, depende do nome no seu service
+      await imovelService.inativar(id); 
       await loadData(); // recarrega a lista
     } catch (error) {
       alert("Erro ao excluir imóvel");
@@ -178,7 +178,7 @@ export default function PropertiesPage() {
 
   const statusConfig = {
     disponivel: { label: 'Disponível', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    reservado: { label: 'Reservado', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+    // reservado: { label: 'Reservado', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
     vendido: { label: 'Vendido', color: 'bg-gray-100 text-gray-800', icon: XCircle },
   };
 
@@ -223,12 +223,12 @@ export default function PropertiesPage() {
                 {imoveis.filter(i => i.status === 'disponivel').length}
               </p>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
+            {/* <div className="bg-white rounded-lg p-4 shadow-sm">
               <p className="text-sm text-gray-600">Reservados</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {imoveis.filter(i => i.status === 'reservado').length}
               </p>
-            </div>
+            </div> */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <p className="text-sm text-gray-600">Vendidos</p>
               <p className="text-2xl font-bold text-gray-600">
@@ -250,7 +250,8 @@ export default function PropertiesPage() {
               />
             </div> */}
             <div className="flex gap-2">
-              {['all', 'disponivel', 'reservado', 'vendido'].map(status => (
+              {/* {['all', 'disponivel', 'reservado', 'vendido'].map(status => ( */}
+              {['all', 'disponivel', 'vendido'].map(status => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status as any)}
@@ -398,7 +399,7 @@ export default function PropertiesPage() {
                       className="w-full p-2 border rounded-lg"
                     >
                       <option value="disponivel">Disponível</option>
-                      <option value="reservado">Reservado</option>
+                      {/* <option value="reservado">Reservado</option> */}
                       <option value="vendido">Vendido</option>
                     </select>
                   </div>
@@ -442,8 +443,10 @@ export default function PropertiesPage() {
                       type="number"
                       required
                       value={formData.valorVenda}
-                      onChange={(e) => setFormData({ ...formData, valorVenda: Number(e.target.value) })}
-                      className="w-full p-2 border rounded-lg"
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        valorVenda: Number(e.target.value) })}
+                      className="w-full p-2 border rounded-lg no-spinner"
                     />
                   </div>
 

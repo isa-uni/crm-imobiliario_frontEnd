@@ -10,7 +10,8 @@ export interface Lead {
   status: LeadStatus;
   valorInteresse: number;
   // tipoImovel: string;
-  imovelId: number | null; 
+  imovel?: Imovel | null; 
+  imovelId?: number | null;
   observacao?: string;
   dataCriacao: Date;
   dataAtualizacao: Date;
@@ -38,7 +39,7 @@ export interface Metrics {
   valorTotalFechado: number;
 }
 
-export type StatusImovel = 'disponivel' | 'reservado' | 'vendido';
+export type StatusImovel = 'disponivel' | 'vendido';
 
 export interface Imovel {
   id: number;
