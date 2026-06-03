@@ -41,7 +41,8 @@ export default function LeadsTable({
 }: LeadsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('active');
-  const [monthFilter, setMonthFilter] = useState<string>('current');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
+  //const [monthFilter, setMonthFilter] = useState<string>('current');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -260,7 +261,14 @@ export default function LeadsTable({
                 </tr>
               ) : (
                 paginatedLeads.map((lead) => {
-                  const StatusIcon = statusConfig[lead.status].icon;
+                  const status = statusConfig[lead.status];
+
+                  if (!status) {
+                    console.error("Status inválido:", lead.status);
+                    return null;
+                  }
+
+                  const StatusIcon = status.icon;
                   return (
                     <tr 
                       key={lead.id} 
@@ -320,7 +328,7 @@ export default function LeadsTable({
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm font-medium text-gray-900">
-                          R$ {lead.valorInteresse.toLocaleString('pt-BR')}
+                          R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}
                         </div>
                       </td>
                       <td className="px-4 py-4">
@@ -328,7 +336,7 @@ export default function LeadsTable({
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-gray-500">
-                          {format(lead.dataAtualizacao, 'dd/MM/yy', { locale: ptBR })}
+                          {format(new Date(lead.dataAtualizacao), 'dd/MM/yy', { locale: ptBR })}
                         </div>
                       </td>
                       <td className="px-4 py-4">

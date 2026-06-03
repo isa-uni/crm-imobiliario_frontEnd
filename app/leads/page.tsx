@@ -27,6 +27,10 @@ export default function LeadsPage() {
     setLeads(data);
   };
 
+  useEffect(() => {
+    console.log("LEADS STATE:", leads);
+  }, [leads]);
+
   const limparTelefone = (telefone: string) => {
     return telefone.replace(/\D/g, '');
   };

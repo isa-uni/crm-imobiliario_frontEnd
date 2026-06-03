@@ -13,8 +13,8 @@ export interface Lead {
   imovel?: Imovel | null; 
   imovelId?: number | null;
   observacao?: string;
-  dataCriacao: Date;
-  dataAtualizacao: Date;
+  dataCriacao: string;
+  dataAtualizacao: string;
   motivoDescarte?: string;
 }
 
