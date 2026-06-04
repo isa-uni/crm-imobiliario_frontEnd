@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Imovel } from '@/types';
 import { imovelService } from '@/service/imovelService';
-import { getImoveis, saveImovel, updateImovel, deleteImovel } from '@/lib/imoveis';
+//import { getImoveis, saveImovel, updateImovel, deleteImovel } from '@/lib/imoveis';
 import { 
   Building2, 
   Plus, 

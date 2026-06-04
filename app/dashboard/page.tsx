@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Lead } from '@/types';
 import { getLeads } from '@/lib/data';
-import { getImoveis } from '@/lib/imoveis';
+// import { getImoveis } from '@/lib/imoveis';
 import { 
   TrendingUp, 
   Users, 
@@ -25,7 +25,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setLeads(getLeads());
-    setImoveis(getImoveis());
+    // setImoveis(getImoveis());
   }, []);
 
   // Métricas do mês atual
