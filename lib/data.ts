@@ -24,8 +24,8 @@ const initialLeads: Lead[] = [
     valorInteresse: 350000,
     // tipoImovel: 'Apartamento 2 quartos',
     observacao: 'Procura na zona sul',
-    dataCriacao: new Date('2024-01-15'),
-    dataAtualizacao: new Date('2024-01-15'),
+    dataCriacao: '2024-01-15',
+    dataAtualizacao: '2024-01-15',
   },
   {
     id: 2,
@@ -37,8 +37,8 @@ const initialLeads: Lead[] = [
     valorInteresse: 450000,
     // tipoImovel: 'Casa 3 quartos',
     observacao: 'Quer garagem para 2 carros',
-    dataCriacao: new Date('2024-01-10'),
-    dataAtualizacao: new Date('2024-01-18'),
+    dataCriacao: '2024-01-10',
+    dataAtualizacao: '2024-01-18',
   },
   {
     id: 3,
@@ -50,8 +50,8 @@ const initialLeads: Lead[] = [
     valorInteresse: 280000,
     // tipoImovel: 'Apartamento 1 quarto',
     observacao: 'Visita agendada para sábado 14h',
-    dataCriacao: new Date('2024-01-05'),
-    dataAtualizacao: new Date('2024-01-20'),
+    dataCriacao: '2024-01-05',
+    dataAtualizacao: '2024-01-20',
   },
   {
     id: 4,
@@ -63,8 +63,8 @@ const initialLeads: Lead[] = [
     valorInteresse: 520000,
     // tipoImovel: 'Casa 4 quartos',
     observacao: 'Proposta enviada, aguardando resposta',
-    dataCriacao: new Date('2024-01-02'),
-    dataAtualizacao: new Date('2024-01-22'),
+    dataCriacao: '2024-01-02',
+    dataAtualizacao: '2024-01-22',
   },
   {
     id: 5,
@@ -76,8 +76,8 @@ const initialLeads: Lead[] = [
     valorInteresse: 380000,
     // tipoImovel: 'Apartamento 2 quartos',
     observacao: 'Venda fechada! Comissão: R$ 11.400',
-    dataCriacao: new Date('2023-12-20'),
-    dataAtualizacao: new Date('2024-01-25'),
+    dataCriacao: '2023-12-20',
+    dataAtualizacao: '2024-01-25',
   },
 ];
 
@@ -103,8 +103,8 @@ export const saveLead = (lead: Omit<Lead, 'id' | 'dataCriacao' | 'dataAtualizaca
   const newLead: Lead = {
     ...lead,
     id: Date.now(),
-    dataCriacao: new Date(),
-    dataAtualizacao: new Date(),
+    dataCriacao: new Date().toISOString(),
+    dataAtualizacao: new Date().toISOString(),
   };
   
   leads.push(newLead);
@@ -121,7 +121,7 @@ export const updateLead = (id: number, updates: Partial<Lead>): Lead | null => {
   leads[index] = {
     ...leads[index],
     ...updates,
-    dataAtualizacao: new Date(),
+    dataAtualizacao: new Date().toISOString(),
   };
   
   localStorage.setItem('crm-leads', JSON.stringify(leads));
