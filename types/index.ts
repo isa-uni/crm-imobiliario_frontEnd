@@ -7,6 +7,7 @@ export interface Lead {
   telefone: string;
   email: string;
   origem: string;
+  historico: string;
   status: LeadStatus;
   valorInteresse: number;
   // tipoImovel: string;
@@ -59,4 +60,46 @@ export interface Imovel {
   // fotos?: string[]; // URLs das fotos
   dataCadastro: Date;
   dataAtualizacao: Date;
+}
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  cpf: string;
+  genero: string;
+  telefone: string;
+  matricula: string;
+  dataNascimento: string;
+  papel: string;
+  ativo: boolean;
+  trocarSenha: boolean;
+}
+
+export interface UsuarioAutenticado {
+  id: number;
+  nome: string;
+  email: string;
+  papel: string;
+  trocarSenha: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  usuario: UsuarioAutenticado;
+}
+
+export interface Papel {
+  id: number;
+  papel: string;
+}
+
+export interface UsuarioPayload {
+  nome: string;
+  email: string;
+  cpf: string;
+  genero: string;
+  telefone: string;
+  dataNascimento: string;
+  papelId: number;
 }

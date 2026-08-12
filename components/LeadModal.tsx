@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Imovel, Lead, LeadStatus } from '@/types';
 import { origemOptions } from '@/service/origemOptions';
+import { historicoOptions } from '@/service/historicoOptions';
 import { imovelService } from '@/service/imovelService';
 import { X } from 'lucide-react';
 import InputMask from 'react-input-mask';
@@ -20,6 +21,7 @@ type LeadFormData = {
   telefone: string;
   email: string;
   origem: string;
+  historico: string;
   status: LeadStatus;
   valorInteresse: number;
   imovelId: number | null;
@@ -34,6 +36,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     telefone: '',
     email: '',
     origem: '',
+    historico: '',
     status: 'lead' as Lead['status'],
     valorInteresse: 0,
     // tipoImovel: '',
@@ -59,6 +62,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         telefone: formatarTelefone(editingLead.telefone),
         email: editingLead.email,
         origem: editingLead.origem,
+        historico: editingLead.historico,
         status: editingLead.status,
         valorInteresse: editingLead.valorInteresse,
         // tipoImovel: editingLead.tipoImovel,
@@ -72,6 +76,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         telefone: '',
         email: '',
         origem: '',
+        historico: '',
         status: 'lead',
         valorInteresse: 0,
         // tipoImovel: '',
@@ -260,6 +265,29 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Histórico *
+              </label>
+
+              <select
+                required
+                value={formData.historico}
+                onChange={(e) =>
+                  setFormData({ ...formData, historico: e.target.value })
+                }
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Selecione...</option>
+
+                {historicoOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
               <select
@@ -289,7 +317,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Valor de Interesse (R$) *
+                Valor de Interesse (R$) 
               </label>
               <input
                 type="number"

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { origemOptions } from '@/service/origemOptions';
+import { historicoOptions } from '@/service/historicoOptions';
 import { Lead } from '@/types';
 import { 
   Search, 
@@ -135,6 +136,10 @@ export default function LeadsTable({
 
   const getOrigemLabel = (value: string) => {
     return origemOptions.find(o => o.value === value)?.label || value;
+  };
+
+    const getHistoricoLabel = (value: string) => {
+    return historicoOptions.find(o => o.value === value)?.label || value;
   };
 
   return (
@@ -332,7 +337,10 @@ export default function LeadsTable({
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="text-sm text-gray-700">{getOrigemLabel(lead.origem)}</span>
+                        <div className='space-y-1'>
+                          <span className="text-sm text-gray-700">{getOrigemLabel(lead.origem)}</span>
+                          <span className="text-sm text-gray-500">{getHistoricoLabel(lead.historico)}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-gray-500">

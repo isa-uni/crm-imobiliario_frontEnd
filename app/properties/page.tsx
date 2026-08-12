@@ -39,7 +39,7 @@ export default function PropertiesPage() {
     cidade: 'Londrina',
     bairro: '',
     // cep: '',
-    valorVenda: 0,
+    valorVenda: null as number | null,
     area: 0,
     quartos: 0,
     banheiros: 0,
@@ -101,7 +101,8 @@ export default function PropertiesPage() {
       await loadData();
       setEditingImovel(null);
       setErrors({}); 
-      setIsModalOpen(false);
+      //setIsModalOpen(false);
+      closeModal();
       return true;
       // loadData();
       // closeModal();
@@ -165,7 +166,7 @@ export default function PropertiesPage() {
       cidade: 'Londrina',
       bairro: '',
       // cep: '',
-      valorVenda: 0,
+      valorVenda: null as number | null,
       area: 0,
       quartos: 0,
       banheiros: 0,
@@ -182,10 +183,10 @@ export default function PropertiesPage() {
     vendido: { label: 'Vendido', color: 'bg-gray-100 text-gray-800', icon: XCircle },
   };
 
-  <form onSubmit={(e) => {
-    e.preventDefault();
-    handleSave(formData);
-  }}></form>
+  // <form onSubmit={(e) => {
+  //   e.preventDefault();
+  //   handleSave(formData);
+  // }}></form>
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
@@ -355,7 +356,18 @@ export default function PropertiesPage() {
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // handleSave(formData);
+                  handleSave({
+                      ...formData,
+                      valorVenda: formData.valorVenda!,
+                    });
+                }}
+                className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+              >
+            {/* <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"> */}
               <div className="p-6 border-b">
                 <h2 className="text-2xl font-bold text-gray-900">
                   {editingImovel ? 'Editar Imóvel' : 'Novo Imóvel'}
@@ -442,10 +454,11 @@ export default function PropertiesPage() {
                     <input
                       type="number"
                       required
-                      value={formData.valorVenda}
+                      value={formData.valorVenda ?? ''}
                       onChange={(e) => setFormData({
                         ...formData, 
-                        valorVenda: Number(e.target.value) })}
+                        valorVenda: e.target.value === '' ? null : Number(e.target.value) })}
+                        // valorVenda: Number(e.target.value) })}
                       className="w-full p-2 border rounded-lg no-spinner"
                     />
                   </div>
@@ -461,7 +474,7 @@ export default function PropertiesPage() {
                   </div> */}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
                     <input
                       type="number"
                       required
@@ -472,7 +485,7 @@ export default function PropertiesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quartos *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quartos</label>
                     <input
                       type="number"
                       required
@@ -483,7 +496,7 @@ export default function PropertiesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Banheiros *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Banheiros</label>
                     <input
                       type="number"
                       required
@@ -494,7 +507,7 @@ export default function PropertiesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vagas *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vagas</label>
                     <input
                       type="number"
                       required
@@ -518,6 +531,7 @@ export default function PropertiesPage() {
 
               <div className="p-6 border-t flex gap-3">
                 <button
+                  type="button"
                   onClick={closeModal}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                 >
@@ -526,14 +540,16 @@ export default function PropertiesPage() {
                 <button
                  //onClick={handleSave}
                   // type="submit"
-                  onClick={() => handleSave(formData)}
+                  type="submit"
+                  // onClick={() => handleSave(formData)}
 
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
                 >
                   {editingImovel ? 'Salvar Alterações' : 'Cadastrar Imóvel'}
                 </button>
               </div>
-            </div>
+            {/* </div>*/}
+            </form> 
           </div>
         )}
       </div>

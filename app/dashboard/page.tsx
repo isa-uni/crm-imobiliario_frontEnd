@@ -18,12 +18,15 @@ import {
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
+import { authService } from '@/service/authService';
 
 export default function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [imoveis, setImoveis] = useState<any[]>([]);
+  const [nome, setNome] = useState<string>('');
 
   useEffect(() => {
+    setNome(authService.getUsuario()?.nome?.split(' ')[0] || '');
     setLeads(getLeads());
     // setImoveis(getImoveis());
   }, []);
@@ -76,7 +79,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Olá! Bem-vindo de volta 👋
+              Olá, {nome}! Bem-vindo de volta 👋
             </h1>
             <p className="text-gray-600 mt-1">
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}

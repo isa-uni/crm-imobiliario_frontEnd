@@ -1,15 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { authService } from '@/service/authService';
+import type { UsuarioAutenticado } from '@/types';
 import {
   Home,
   Users,
+  UserCog,
   BarChart3,
   FileText,
   Settings,
   LogOut,
+  KeyRound,
   Menu,
   X,
   ChevronDown,
@@ -28,9 +32,17 @@ export default function Sidebar({ children }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(() => authService.getUsuario());
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
+
+  const handleLogout = () => {
+    authService.logout();
+    setUsuario(null);
+    router.push('/login');
+  };
 
   const toggleSubmenu = (menu: string) => {
     setOpenSubmenu(openSubmenu === menu ? null : menu);
@@ -38,13 +50,27 @@ export default function Sidebar({ children }: SidebarProps) {
 
   const isActive = (path: string) => pathname === path;
 
-  const menuItems = [
-    // {
-    //   id: 'dashboard',
-    //   label: 'Dashboard',
-    //   icon: <Home size={20} />,
-    //   path: '/dashboard',
-    // },
+  const iniciais = (nome: string) => {
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].charAt(0).toUpperCase();
+    return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+  };
+
+  const labelPapel = (papel: string) => {
+    const nomes: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor' };
+    return nomes[papel] || papel;
+  };
+
+  const menuItems: (
+    | { id: string; label: string; icon: React.ReactNode; path: string; adminOnly?: boolean }
+    | { id: string; submenu: { label: string; path: string; icon?: React.ReactNode }[]; adminOnly?: boolean }
+  )[] = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: <Home size={20} />,
+      path: '/dashboard',
+    },
     {
       id: 'leads',
       label: 'Leads',
@@ -62,6 +88,13 @@ export default function Sidebar({ children }: SidebarProps) {
       label: 'Imóveis',
       icon: <Building2 size={20} />,
       path: '/properties',
+    },
+    {
+      id: 'usuarios',
+      label: 'Usuários',
+      icon: <UserCog size={20} />,
+      path: '/usuarios',
+      adminOnly: true,
     },
     {
       id: 'analytics',
@@ -138,11 +171,20 @@ export default function Sidebar({ children }: SidebarProps) {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">JD</span>
+              <span className="text-blue-600 font-semibold text-sm">
+                {usuario ? iniciais(usuario.nome) : '--'}
+              </span>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-800">João Corretor</p>
-              <p className="text-xs text-gray-500">corretor@email.com</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                {usuario?.nome || 'Usuário'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{usuario?.email || ''}</p>
+              {usuario?.papel && (
+                <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
+                  {labelPapel(usuario.papel)}
+                </span>
+              )}
             </div>
             <div className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
           </div>
@@ -151,9 +193,11 @@ export default function Sidebar({ children }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <ul className="space-y-1">
-            {menuItems.map((item) => (
+            {menuItems
+              .filter((item) => !item.adminOnly || usuario?.papel === 'admin')
+              .map((item) => (
               <li key={item.id}>
-                {item.submenu ? (
+                {'submenu' in item ? (
                   // Item com submenu
                   <div>
                     {/* <button
@@ -220,8 +264,19 @@ export default function Sidebar({ children }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-gray-200">
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors">
+        <div className="px-3 py-4 border-t border-gray-200 space-y-1">
+          <Link
+            href="/trocar-senha"
+            onClick={closeSidebar}
+            className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <KeyRound size={20} />
+            <span className="text-sm font-medium">Alterar senha</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
             <LogOut size={20} />
             <span className="text-sm font-medium">Sair</span>
           </button>

@@ -5,7 +5,7 @@ import { Lead } from '@/types';
 import { X, Phone, Mail, Calendar, DollarSign, Building2, MapPin, User, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { origemOptions } from '@/service/origemOptions';
+import { origemOptions } from '@/service/historicoOptions';
 
 
 interface LeadViewModalProps {
