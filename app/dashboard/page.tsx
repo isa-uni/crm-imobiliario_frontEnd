@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Lead } from '@/types';
+import { Lead, Imovel } from '@/types';
 import { getLeads } from '@/lib/data';
 // import { getImoveis } from '@/lib/imoveis';
 import { 
@@ -19,18 +19,60 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { authService } from '@/service/authService';
+import { leadService } from '@/service/leadService';
+import { imovelService } from '@/service/imovelService';
+import Funil from "@/components/FunilDashboard";
+
 
 export default function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [imoveis, setImoveis] = useState<any[]>([]);
+  const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [nome, setNome] = useState<string>('');
+
 
   useEffect(() => {
     setNome(authService.getUsuario()?.nome?.split(' ')[0] || '');
-    setLeads(getLeads());
+    loadData();
     // setImoveis(getImoveis());
   }, []);
 
+  const loadData = async () => {
+    const dataLead = await leadService.getAll();
+    const dataImovel = await imovelService.getAll();
+    
+    setLeads(dataLead);
+    setImoveis(dataImovel);
+  };
+
+   {/*
+  const funil: EtapaFunil[] = [
+    {
+      nome: "Leads",
+      quantidade: leads.filter(l => ['lead'].includes(l.status)).length,
+      percentual: 100,
+    },
+    {
+      nome: "Qualificação",
+      quantidade: leads.filter(l => ['lead'].includes(l.status)).length,
+      percentual: 79.2,
+    },
+    {
+      nome: "Proposta",
+      quantidade: leads.filter(l => ['lead'].includes(l.status)).length,
+      percentual: 51.7,
+    },
+    {
+      nome: "Negociação",
+      quantidade: leads.filter(l => ['lead'].includes(l.status)).length,
+      percentual: 31.7,
+    },
+    {
+      nome: "Fechados",
+      quantidade: leads.filter(l => ['lead'].includes(l.status)).length,
+      percentual: 17.5,
+    },
+  ];
+*/}
   // Métricas do mês atual
   const mesAtual = useMemo(() => {
     const inicio = startOfMonth(new Date());
@@ -213,7 +255,7 @@ export default function Dashboard() {
         </div>
 
         {/* Funil Simplificado */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        {/* <div className="bg-white rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Funil do Mês</h3>
           <div className="space-y-3">
             {[
@@ -224,7 +266,7 @@ export default function Dashboard() {
               { label: 'Pastas', count: mesAtual.filter(l => ['pasta', 'aprovados', 'contrato'].includes(l.status)).length, color: 'orange' },
               { label: 'Aprovados', count: mesAtual.filter(l => ['aprovados', 'contrato'].includes(l.status)).length, color: 'orange' },
               { label: 'Contratos', count: mesAtual.filter(l => l.status === 'contrato').length, color: 'green' },
-            ].map((stage, index) => {
+            ].map((stage) => {
               const percentage = mesAtual.length > 0 ? (stage.count / mesAtual.length) * 100 : 0;
               return (
                 <div key={stage.label}>
@@ -243,7 +285,8 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-
+        */}
+        <Funil />
       </main>
     </div>
   );
