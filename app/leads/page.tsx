@@ -7,7 +7,7 @@ import { leadService } from '@/service/leadService';
 import LeadsTable from '@/components/LeadsTable';
 import LeadModal from '@/components/LeadModal';
 import LeadViewModal from '@/components/LeadViewModal';
-import { Plus, Users, Download } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function LeadsPage() {
@@ -126,63 +126,52 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users size={32} className="text-blue-600" />
-              </div>
+              <Users size={28} className="text-gray-600" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Leads</h1>
-                <p className="text-gray-600">Gerencie todos os seus leads de forma eficiente</p>
+                <p className="text-gray-600">Cadastre e acompanhe os clientes interessados</p>
               </div>
             </div>
-            <div className="flex gap-3">
-              {/*<button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm border border-gray-200"
-              >
-                <Download size={20} />
-                Exportar
-              </button>*/}
-              <button
-                onClick={() => {
-                  setEditingLead(null);
-                  setErrors({});
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-              >
-                <Plus size={20} />
-                Novo Lead
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setEditingLead(null);
+                setErrors({});
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
+            >
+              <Plus size={20} />
+              Novo Lead
+            </button>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-white p-4 border border-gray-300">
               <p className="text-sm text-gray-600 mb-1">Total de Leads</p>
               <p className="text-2xl font-bold text-gray-900">{leads.length}</p>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-white p-4 border border-gray-300">
               <p className="text-sm text-gray-600 mb-1">Ativos</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-gray-900">
                 {leads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length}
               </p>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-white p-4 border border-gray-300">
               <p className="text-sm text-gray-600 mb-1">Contrato</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-gray-900">
                 {leads.filter(l => l.status === 'contrato').length}
               </p>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-white p-4 border border-gray-300">
               <p className="text-sm text-gray-600 mb-1">Este Mês</p>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-2xl font-bold text-gray-900">
                 {leads.filter(l => {
                   const leadDate = new Date(l.dataCriacao);
                   const now = new Date();

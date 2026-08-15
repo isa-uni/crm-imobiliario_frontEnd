@@ -29,5 +29,10 @@ export const leadService = {
   async getMetrics() {
     const response = await api.get('/leads/metrics');
     return response.data;
+  },
+
+  async getTramitacoes(id: number) {
+    const response = await api.get(`/leads/${id}/tramitacoes`);
+    return response.data;
   }
 }

@@ -162,20 +162,20 @@ export default function LeadsTable({
         <div className="flex gap-2">
           <button
             onClick={() => setStatusFilter('active')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 text-sm font-medium ${
               statusFilter === 'active'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
             Ativos ({leads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length})
           </button>
           <button
             onClick={() => setStatusFilter('archived')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 text-sm font-medium ${
               statusFilter === 'archived'
                 ? 'bg-gray-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
             <Archive size={16} className="inline mr-1" />
@@ -183,10 +183,10 @@ export default function LeadsTable({
           </button>
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 text-sm font-medium ${
               statusFilter === 'all'
                 ? 'bg-gray-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
             Todos
@@ -225,30 +225,30 @@ export default function LeadsTable({
       </div> */}
 
       {/* Tabela */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white border border-gray-300 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-200 border-b border-gray-300">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Nome
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Contato
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Valor
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Origem
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Data
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
                   Ações
                 </th>
               </tr>
@@ -277,7 +277,7 @@ export default function LeadsTable({
                   return (
                     <tr 
                       key={lead.id} 
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-100"
                     >
                       <td className="px-4 py-4">
                         <div>
@@ -311,7 +311,7 @@ export default function LeadsTable({
                             }
                           }}
                           className={`
-                            px-3 py-1 rounded-full text-xs font-medium
+                            px-3 py-1 text-xs font-medium
                             border-0 cursor-pointer
                             ${statusConfig[lead.status].color}
                           `}
@@ -351,14 +351,14 @@ export default function LeadsTable({
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => onView(lead)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-50"
                             title="Ver detalhes"
                           >
                             <Eye size={16} />
                           </button>
                           <button
                             onClick={() => onEdit(lead)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 hover:bg-gray-100"
                             title="Editar"
                           >
                             <Edit size={16} />
@@ -382,7 +382,7 @@ export default function LeadsTable({
 
         {/* Paginação */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+          <div className="px-4 py-3 border-t border-gray-300 flex items-center justify-between bg-gray-100">
             <div className="text-sm text-gray-600">
               Página {currentPage} de {totalPages} • 
               Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredLeads.length)} de {filteredLeads.length}
@@ -391,14 +391,14 @@ export default function LeadsTable({
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
               >
                 <ChevronRight size={16} />
               </button>

@@ -1,6 +1,15 @@
 // Tipos existentes de Lead
 export type LeadStatus = 'lead' | 'oportunidade' | 'visita-agendada' | 'visita-realizada' | 'pasta' | 'aprovado' | 'contrato' | 'descarte';
 
+export interface Tramitacao {
+  id: number;
+  leadId: number;
+  statusAnterior: LeadStatus | null;
+  statusAtual: LeadStatus;
+  dataMovimentacao: string;
+  usuarioNome?: string;
+}
+
 export interface Lead {
   id: number;
   nome: string;
@@ -92,6 +101,7 @@ export interface LoginResponse {
 export interface Papel {
   id: number;
   papel: string;
+  ativo?: boolean;
 }
 
 export interface UsuarioPayload {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2 } from 'lucide-react';
+import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2 } from 'lucide-react';
 import { Usuario, Papel, UsuarioPayload } from '@/types';
 import { usuarioService } from '@/service/usuarioService';
 import { papelService } from '@/service/papelService';
@@ -180,17 +180,37 @@ export default function UsuariosPage() {
     }
   };
 
+  const handleDeletePapel = async (papel: Papel) => {
+    const count = usuarios.filter((u) => u.papel === papel.papel).length;
+    const mensagem =
+      count > 0
+        ? `O papel "${papel.papel}" está vinculado a ${count} usuário(s) (incluindo desativados). Ele será ocultado do sistema e os usuários manterão o vínculo. Continuar?`
+        : `Excluir o papel "${papel.papel}"?`;
+
+    if (!confirm(mensagem)) return;
+
+    try {
+      await papelService.excluir(papel.id);
+      await loadData();
+      setNotify(`Papel "${papel.papel}" excluído.`);
+    } catch (err: any) {
+      const message =
+        err.response?.data && typeof err.response.data === 'string'
+          ? err.response.data
+          : 'Não foi possível excluir o papel.';
+      setNotify(message);
+    }
+  };
+
   const labelStatus = (u: Usuario) => (u.ativo ? 'Ativo' : 'Inativo');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <UserCog size={32} className="text-blue-600" />
-            </div>
+            <UserCog size={28} className="text-gray-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
               <p className="text-gray-600">Controle o acesso da equipe à plataforma</p>
@@ -198,7 +218,7 @@ export default function UsuariosPage() {
           </div>
           <button
             onClick={openNovo}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
           >
             <Plus size={20} />
             Novo Usuário
@@ -206,7 +226,7 @@ export default function UsuariosPage() {
         </div>
 
         {notify && (
-          <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 flex items-center justify-between">
+          <div className="mb-6 bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 flex items-center justify-between">
             <span>{notify}</span>
             <button onClick={() => setNotify(null)} className="text-blue-500 hover:text-blue-700">
               <X size={16} />
@@ -216,22 +236,22 @@ export default function UsuariosPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <div className="bg-white p-4 border border-gray-300">
             <p className="text-sm text-gray-600 mb-1">Total de Usuários</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <div className="bg-white p-4 border border-gray-300">
             <p className="text-sm text-gray-600 mb-1">Ativos</p>
             <p className="text-2xl font-bold text-green-600">{stats.ativos}</p>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <div className="bg-white p-4 border border-gray-300">
             <p className="text-sm text-gray-600 mb-1">Inativos</p>
             <p className="text-2xl font-bold text-gray-500">{stats.inativos}</p>
           </div>
         </div>
 
         {/* Papéis */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white border border-gray-300 p-6 mb-6">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Shield size={20} className="text-gray-600" />
@@ -246,14 +266,33 @@ export default function UsuariosPage() {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {papeis.map((p) => (
-              <span
-                key={p.id}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700"
-              >
-                {p.papel}
-              </span>
-            ))}
+            {papeis.map((p) => {
+              const isSystem = p.papel === 'admin' || p.papel === 'corretor';
+              const count = usuarios.filter((u) => u.papel === p.papel).length;
+              return (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-white border border-gray-300 text-gray-700"
+                >
+                  {p.papel}
+                  <span className="text-xs text-gray-400" title={`${count} usuário(s) vinculado(s)`}>
+                    ({count})
+                  </span>
+                  <button
+                    onClick={() => handleDeletePapel(p)}
+                    disabled={isSystem}
+                    title={isSystem ? 'Papel do sistema — não pode ser excluído' : 'Excluir papel'}
+                    className={`p-0.5 ${
+                      isSystem
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-red-500 hover:text-red-700'
+                    }`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </span>
+              );
+            })}
             {papeis.length === 0 && (
               <p className="text-sm text-gray-500">Nenhum papel cadastrado.</p>
             )}
@@ -261,7 +300,7 @@ export default function UsuariosPage() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white border border-gray-300 p-4 mb-6">
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[220px]">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -270,13 +309,13 @@ export default function UsuariosPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome, e-mail ou matrícula..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:outline-none focus:border-blue-500"
               />
             </div>
             <select
               value={papelFilter}
               onChange={(e) => setPapelFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-blue-500"
             >
               <option value="all">Todos os papéis</option>
               {papeis.map((p) => (
@@ -288,7 +327,7 @@ export default function UsuariosPage() {
             <select
               value={ativoFilter}
               onChange={(e) => setAtivoFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-blue-500"
             >
               <option value="all">Todos os status</option>
               <option value="ativos">Ativos</option>
@@ -298,7 +337,7 @@ export default function UsuariosPage() {
         </div>
 
         {/* Tabela */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 size={32} className="animate-spin text-blue-600" />
@@ -318,7 +357,7 @@ export default function UsuariosPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <tr className="bg-gray-200 border-b border-gray-300 text-left text-xs font-semibold text-gray-700 uppercase">
                     <th className="px-6 py-3">Usuário</th>
                     <th className="px-6 py-3">Matrícula</th>
                     <th className="px-6 py-3">Telefone</th>
@@ -327,15 +366,15 @@ export default function UsuariosPage() {
                     <th className="px-6 py-3 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200">
                   {filteredUsuarios.map((usuario) => {
                     const isMe = usuario.id === meId;
                     return (
-                      <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={usuario.id} className="hover:bg-gray-100">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                              <span className="text-blue-600 font-semibold text-sm">
+                            <div className="w-10 h-10 bg-gray-200 flex items-center justify-center shrink-0">
+                              <span className="text-gray-700 font-semibold text-sm">
                                 {usuario.nome.split(' ').slice(0, 2).map((n) => n.charAt(0)).join('').toUpperCase()}
                               </span>
                             </div>
@@ -351,13 +390,13 @@ export default function UsuariosPage() {
                         <td className="px-6 py-4 text-sm text-gray-700">{usuario.matricula}</td>
                         <td className="px-6 py-4 text-sm text-gray-700">{usuario.telefone}</td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          <span className="inline-flex px-2 py-0.5 text-xs bg-gray-200 text-gray-700">
                             {usuario.papel}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            className={`inline-flex px-2 py-0.5 text-xs ${
                               usuario.ativo
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700'
@@ -371,14 +410,14 @@ export default function UsuariosPage() {
                             <button
                               onClick={() => openEditar(usuario)}
                               title="Editar usuário"
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50"
                             >
                               <Edit size={18} />
                             </button>
                             <button
                               onClick={() => openRedefinirSenha(usuario)}
                               title="Redefinir senha"
-                              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50"
                             >
                               <KeyRound size={18} />
                             </button>
@@ -386,7 +425,7 @@ export default function UsuariosPage() {
                               onClick={() => handleToggleAtivo(usuario)}
                               disabled={isMe}
                               title={usuario.ativo ? 'Desativar usuário' : 'Reativar usuário'}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2 ${
                                 isMe
                                   ? 'text-gray-300 cursor-not-allowed'
                                   : usuario.ativo
@@ -430,15 +469,15 @@ export default function UsuariosPage() {
         {/* Modal redefinir senha */}
         {isSenhaModalOpen && senhaTarget && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-800">Redefinir Senha</h2>
+            <div className="bg-white max-w-md w-full">
+              <div className="flex justify-between items-center p-6 border-b border-gray-300">
+                <h2 className="text-xl font-bold text-gray-800">Redefinir Senha</h2>
                 <button
                   onClick={() => {
                     setIsSenhaModalOpen(false);
                     setSenhaTarget(null);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100"
                 >
                   <X size={20} />
                 </button>
@@ -458,7 +497,7 @@ export default function UsuariosPage() {
                     type="password"
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-500"
                     placeholder="Mínimo de 6 caracteres"
                   />
                 </div>
@@ -471,7 +510,7 @@ export default function UsuariosPage() {
                     type="password"
                     value={confirmarSenha}
                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-500"
                     placeholder="Repita a nova senha"
                   />
                 </div>
@@ -487,13 +526,13 @@ export default function UsuariosPage() {
                       setIsSenhaModalOpen(false);
                       setSenhaTarget(null);
                     }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
                   >
                     Redefinir Senha
                   </button>

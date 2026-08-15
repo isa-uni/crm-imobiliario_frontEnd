@@ -11,4 +11,8 @@ export const papelService = {
     const response = await api.post("/papel/novo", { papel })
     return response.data
   },
+
+  async excluir(id: number) {
+    await api.delete(`/papel/${id}`)
+  },
 }

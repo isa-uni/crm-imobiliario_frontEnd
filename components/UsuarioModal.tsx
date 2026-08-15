@@ -94,18 +94,18 @@ export default function UsuarioModal({
   };
 
   const inputClass =
-    'w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
+    'w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">
+      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-gray-300">
+          <h2 className="text-xl font-bold text-gray-800">
             {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100"
           >
             <X size={20} />
           </button>
@@ -113,7 +113,7 @@ export default function UsuarioModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!editingUsuario && (
-            <div className="rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
               A senha inicial será os <strong>4 últimos dígitos do CPF</strong> e o
               usuário deverá trocá-la no primeiro acesso.
             </div>
@@ -122,7 +122,7 @@ export default function UsuarioModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome *
+                Nome <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -137,7 +137,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -153,7 +153,7 @@ export default function UsuarioModal({
             {!editingUsuario && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CPF *
+                  CPF <span className="text-red-500">*</span>
                 </label>
                 <InputMask
                   mask="999.999.999-99"
@@ -179,7 +179,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gênero *
+                Gênero <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.genero}
@@ -194,7 +194,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Telefone *
+                Telefone <span className="text-red-500">*</span>
               </label>
               <InputMask
                 mask="(99) 99999-9999"
@@ -212,7 +212,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data de Nascimento *
+                Data de Nascimento <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -228,7 +228,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Papel *
+                Papel <span className="text-red-500">*</span>
               </label>
               <select
                 required
@@ -251,14 +251,14 @@ export default function UsuarioModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-60"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {loading ? 'Salvando...' : editingUsuario ? 'Salvar Alterações' : 'Adicionar Usuário'}
             </button>

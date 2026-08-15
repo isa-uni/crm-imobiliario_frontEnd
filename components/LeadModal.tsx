@@ -153,14 +153,14 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">
+      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-gray-300">
+          <h2 className="text-xl font-bold text-gray-800">
             {editingLead ? 'Editar Lead' : 'Novo Lead'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100"
           >
             <X size={20} />
           </button>
@@ -170,14 +170,14 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome *
+                Nome <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
                 placeholder="João Silva"
               />
             </div>
@@ -191,13 +191,13 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 required
                 value={formData.telefone}
                 onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
                 placeholder="(11) 98765-4321"
               />
             </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Telefone *
+                Telefone <span className="text-red-500">*</span>
               </label>
               <InputMask
                 mask="(99) 99999-9999"
@@ -214,7 +214,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                     {...inputProps}
                     type="tel"
                     required
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
                     placeholder="(11) 98765-4321"
                   />
                 )}
@@ -228,21 +228,21 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
                 placeholder="joao@email.com"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Origem *
+                Origem <span className="text-red-500">*</span>
               </label>
 
               <select
@@ -251,7 +251,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 onChange={(e) =>
                   setFormData({ ...formData, origem: e.target.value })
                 }
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
               >
                 <option value="">Selecione...</option>
 
@@ -265,7 +265,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Histórico *
+                Histórico <span className="text-red-500">*</span>
               </label>
 
               <select
@@ -274,7 +274,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 onChange={(e) =>
                   setFormData({ ...formData, historico: e.target.value })
                 }
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
               >
                 <option value="">Selecione...</option>
 
@@ -302,7 +302,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                   });
                 }}
                 // onChange={(e) => setFormData({ ...formData, status: e.target.value as Lead['status'] })}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
               >
                 <option value="lead">Lead</option>
                 <option value="oportunidade">Oportunidade</option>
@@ -345,7 +345,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 const value = e.target.value;
                 handleImovelSelect(value ? Number(value) : null);
               }}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
             >
               <option value="">Nenhum imóvel específico</option>
               {imoveis.map(imovel => (
@@ -356,7 +356,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
             </select>
             {imoveis.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Nenhum imóvel disponível. Cadastre imóveis em "Imóveis" primeiro.
+                Nenhum imóvel disponível. Cadastre imóveis em &quot;Imóveis&quot; primeiro.
               </p>
             )}
           </div>
@@ -370,7 +370,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
               required
               value={formData.tipoImovel}
               onChange={(e) => setFormData({ ...formData, tipoImovel: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
               placeholder="Apartamento 2 quartos"
             />
           </div> */}
@@ -382,7 +382,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
             <textarea
               value={formData.observacao}
               onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600"
               rows={3}
               placeholder="Informações adicionais sobre o cliente..."
             />
@@ -390,7 +390,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
           {formData.status === 'descarte' && (
             <div className="mt-3">
               <label className="block text-sm font-medium text-gray-700">
-                Motivo do descarte *
+                Motivo do descarte <span className="text-red-500">*</span>
               </label>
 
               <textarea
@@ -408,14 +408,14 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
             >
               Cancelar
             </button>
             <button
               type="submit"
               // disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
             >
               {editingLead ? 'Salvar Alterações' : 'Adicionar Lead'}
             </button>

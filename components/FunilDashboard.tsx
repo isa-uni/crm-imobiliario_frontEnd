@@ -1,64 +1,66 @@
 "use client";
 
-import {
-  FunnelChart,
-  Funnel,
-  LabelList,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { Lead } from "@/types";
 
+interface FunilProps {
+  leads: Lead[];
+}
 
+const ETAPAS = [
+  { status: "lead", label: "Leads", cor: "bg-blue-500" },
+  { status: "oportunidade", label: "Ops", cor: "bg-indigo-500" },
+  { status: "visita-agendada", label: "Agend.", cor: "bg-teal-500" },
+  { status: "visita-realizada", label: "Visitas", cor: "bg-green-500" },
+  { status: "pasta", label: "Pastas", cor: "bg-orange-500" },
+  { status: "aprovado", label: "Aprov.", cor: "bg-cyan-500" },
+  { status: "contrato", label: "Vendas", cor: "bg-purple-600" },
+] as const;
 
-const dados = [
-  {
-    nome: "Novos",
-    valor: 1250,
-  },
-  {
-    nome: "Em análise",
-    valor: 980,
-  },
-  {
-    nome: "Aprovados",
-    valor: 620,
-  },
-  {
-    nome: "Negociação",
-    valor: 410,
-  },
-  {
-    nome: "Finalizados",
-    valor: 180,
-  },
-];
+export default function Funil({ leads }: FunilProps) {
+  const contagens: Record<string, number> = {};
+  ETAPAS.forEach((etapa) => {
+    contagens[etapa.status] = leads.filter((l) => l.status === etapa.status).length;
+  });
 
-export default function Funil() {
+  const rows = ETAPAS.map((etapa, index) => {
+    const quantidade = contagens[etapa.status];
+    const anterior = index > 0 ? contagens[ETAPAS[index - 1].status] : 0;
+    const conversao = anterior > 0 ? Math.round((quantidade / anterior) * 100) : null;
+
+    return {
+      ...etapa,
+      quantidade,
+      index,
+      conversao,
+    };
+  });
+
   return (
-    <div className="w-full rounded-xl bg-white p-6 shadow">
+    <div className="w-full bg-white border border-gray-300 p-6">
       <h2 className="mb-4 text-xl font-semibold text-gray-800">
         Funil de processos
       </h2>
 
-      <div className="h-[400px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <FunnelChart>
-            <Tooltip />
-
-            <Funnel
-              dataKey="valor"
-              data={dados}
-              isAnimationActive
-            >
-              <LabelList
-                position="right"
-                fill="#333"
-                stroke="none"
-                dataKey="nome"
-              />
-            </Funnel>
-          </FunnelChart>
-        </ResponsiveContainer>
+      <div className="flex flex-col items-center">
+        {rows.map((row) => (
+          <div key={row.status} className="flex items-center gap-2 mb-1 w-full max-w-lg">
+            <div className="relative flex-1">
+              <div
+                className={`${row.cor} h-6 flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                style={{
+                  width: `${100 - row.index * 12}%`,
+                  clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)",
+                  margin: "0 auto",
+                }}
+              >
+                {row.quantidade}
+              </div>
+            </div>
+            {/* <span className="w-16 text-[10px] text-gray-500 bg-gray-200 px-1 py-0.5 text-center whitespace-nowrap">
+              {row.index === 0 ? "Topo" : `Conv: ${row.conversao !== null ? row.conversao : "--"}%`}
+            </span> */}
+          </div>
+        ))}
       </div>
     </div>
   );

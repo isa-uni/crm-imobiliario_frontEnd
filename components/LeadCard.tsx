@@ -97,7 +97,7 @@ export default function LeadCard({ lead, onEdit,
         </p>
         {lead.observacao && (
           <p className="text-xs text-gray-600 italic">
-            "{lead.observacao}"
+            &quot;{lead.observacao}&quot;
           </p>
         )}
       </div>
