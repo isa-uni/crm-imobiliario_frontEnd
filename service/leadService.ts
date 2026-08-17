@@ -10,6 +10,7 @@ export const leadService = {
 
   async cadastrar(data: any) {
     const response = await api.post("/leads/cadastrar", data)
+    console.log("response.data ", response.data)
     return response.data
   },
 

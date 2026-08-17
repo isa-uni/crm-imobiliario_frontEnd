@@ -116,6 +116,8 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     }
 
     const sucesso = await onSave(formData);
+    console.log('Sucesso no salvamento: ', sucesso);
+
 
     setLoading(false);
 
@@ -124,10 +126,10 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     }
   };
 
-  console.log("formData antes de salvar 1", formData);
+  //console.log("formData antes de salvar 1", formData);
 
   const handleImovelSelect = (imovelId: number | null) => {
-    console.log("formData antes de salvar 2", formData);
+    console.log("formData antes de salvar o imovel 2", formData);
     if (!imovelId) {
       setFormData({
         ...formData,
