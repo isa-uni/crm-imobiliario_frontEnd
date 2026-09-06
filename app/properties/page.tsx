@@ -19,8 +19,12 @@ import {
   XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/ToastProvider';
+import { parseApiError } from '@/lib/errorHandler';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 export default function PropertiesPage() {
+  const { toast } = useToast();
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [filteredImoveis, setFilteredImoveis] = useState<Imovel[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,6 +32,8 @@ export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState<any>({});
   const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'vendido'>('all');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     titulo: '',
@@ -54,10 +60,20 @@ export default function PropertiesPage() {
   }, [imoveis, searchTerm, statusFilter]);
 
   const loadData = async () => {
-    const data = await imovelService.getAll();
-    // const metricsData = await leadService.getMetrics();
-    setImoveis(data);
-    // setMetrics(metricsData);
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await imovelService.getAll();
+      // const metricsData = await leadService.getMetrics();
+      setImoveis(data);
+      // setMetrics(metricsData);
+    } catch (e: any) {
+      const parsed = parseApiError(e);
+      setLoadError(parsed.message);
+      toast(parsed.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterImoveis = () => {
@@ -88,6 +104,7 @@ export default function PropertiesPage() {
         descricao,
       };
 
+      const isEditing = !!editingImovel;
       if (editingImovel) {
         await imovelService.atualizar(editingImovel.id, payload);
       } else {
@@ -99,20 +116,17 @@ export default function PropertiesPage() {
       setErrors({}); 
       //setIsModalOpen(false);
       closeModal();
+      toast(isEditing ? 'Imóvel atualizado com sucesso.' : 'Imóvel cadastrado com sucesso.', 'success');
       return true;
       // loadData();
       // closeModal();
     } catch (error: any) {
-      if (error.response?.data?.errors) {
-        const backendErrors: any = {};
-
-        error.response.data.errors.forEach((err: any) => {
-          backendErrors[err.field] = err.message;
-        });
-
-        setErrors(backendErrors);
+      const parsed = parseApiError(error);
+      if (parsed.fields) {
+        setErrors(parsed.fields);
+        toast('Existem campos inválidos. Verifique os campos destacados.', 'warning');
       } else {
-        alert("Erro ao salvar imóvel");
+        toast(parsed.message, 'error');
       }
 
       return false;
@@ -145,8 +159,9 @@ export default function PropertiesPage() {
       try {
       await imovelService.inativar(id); 
       await loadData(); // recarrega a lista
-    } catch (error) {
-      alert("Erro ao excluir imóvel");
+      toast('Imóvel excluído com sucesso.', 'success');
+    } catch (e: any) {
+      toast(parseApiError(e).message, 'error');
     }
       // deleteImovel(id);
       // loadData();
@@ -174,9 +189,9 @@ export default function PropertiesPage() {
   };
 
   const statusConfig = {
-    disponivel: { label: 'Disponível', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+    disponivel: { label: 'Disponível', color: 'bg-[#e8f6ee] text-[#0f8a52]', icon: CheckCircle },
     // reservado: { label: 'Reservado', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    vendido: { label: 'Vendido', color: 'bg-gray-100 text-gray-800', icon: XCircle },
+    vendido: { label: 'Vendido', color: 'bg-[#eef2f7] text-[#5f7488]', icon: XCircle },
   };
 
   // <form onSubmit={(e) => {
@@ -185,21 +200,23 @@ export default function PropertiesPage() {
   // }}></form>
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-surface p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Building2 size={28} className="text-gray-600" />
+              <span className="w-12 h-12 rounded-xl bg-accent text-primary flex items-center justify-center shadow-btn">
+                <Building2 size={24} />
+              </span>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Catálogo de Imóveis</h1>
-                <p className="text-gray-600">Cadastre e acompanhe os imóveis</p>
+                <h1 className="text-3xl font-bold text-ink tracking-tight">Catálogo de Imóveis</h1>
+                <p className="text-muted">Cadastre e acompanhe os imóveis</p>
               </div>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-orange-600 text-white px-6 py-2 hover:bg-orange-700"
+              className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
             >
               <Plus size={20} />
               Novo Imóvel
@@ -208,19 +225,19 @@ export default function PropertiesPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 border border-gray-300">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{imoveis.length}</p>
+            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+              <p className="text-sm text-muted mb-1">Total</p>
+              <p className="text-3xl font-bold text-ink">{imoveis.length}</p>
             </div>
-            <div className="bg-white p-4 border border-gray-300">
-              <p className="text-sm text-gray-600">Disponíveis</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+              <p className="text-sm text-muted mb-1">Disponíveis</p>
+              <p className="text-3xl font-bold text-[#0f8a52]">
                 {imoveis.filter(i => i.status === 'disponivel').length}
               </p>
             </div>
-            <div className="bg-white p-4 border border-gray-300">
-              <p className="text-sm text-gray-600">Vendidos</p>
-              <p className="text-2xl font-bold text-gray-600">
+            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+              <p className="text-sm text-muted mb-1">Vendidos</p>
+              <p className="text-3xl font-bold text-muted">
                 {imoveis.filter(i => i.status === 'vendido').length}
               </p>
             </div>
@@ -233,10 +250,10 @@ export default function PropertiesPage() {
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status as any)}
-                  className={`px-4 py-2 text-sm font-medium ${
+                  className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
                     statusFilter === status
-                      ? 'bg-orange-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      ? 'bg-primary text-white shadow-btn'
+                      : 'bg-white text-muted hover:bg-white border border-line'
                   }`}
                 >
                   {status === 'all' ? 'Todos' : statusConfig[status as keyof typeof statusConfig].label}
@@ -247,82 +264,94 @@ export default function PropertiesPage() {
         </div>
 
         {/* Grid de Imóveis */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredImoveis.map(imovel => {
-            const StatusIcon = statusConfig[imovel.status].icon;
-            return (
-              <div key={imovel.id} className="bg-white border border-gray-300 overflow-hidden">
-                <div className="h-40 bg-gray-200 flex items-center justify-center border-b border-gray-300">
-                  <Building2 size={48} className="text-gray-400" />
-                </div>
-                
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-gray-900">{imovel.titulo}</h3>
-                    <span className={`px-2 py-1 text-xs font-medium flex items-center gap-1 ${statusConfig[imovel.status].color}`}>
-                      <StatusIcon size={12} />
-                      {statusConfig[imovel.status].label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
-                    <MapPin size={14} />
-                    <span>{imovel.bairro}, {imovel.cidade}</span>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2 mb-3 text-sm text-gray-700">
-                    <div className="flex items-center gap-1">
-                      <Maximize size={14} />
-                      <span>{imovel.area}m²</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <BedDouble size={14} />
-                      <span>{imovel.quartos}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Bath size={14} />
-                      <span>{imovel.banheiros}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Car size={14} />
-                      <span>{imovel.vagas}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-3 mb-3">
-                    <div className="flex items-center gap-2 text-green-600 font-bold text-xl">
-                      <DollarSign size={20} />
-                      R$ {imovel.valorVenda.toLocaleString('pt-BR')}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(imovel)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm"
-                    >
-                      <Edit size={16} />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(imovel.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-sm"
-                    >
-                      <Trash2 size={16} />
-                      Excluir
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {filteredImoveis.length === 0 && (
-          <div className="text-center py-12 bg-white border border-gray-300">
-            <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600">Nenhum imóvel encontrado</p>
+        {loading ? (
+          <div className="bg-white border border-line rounded-card shadow-card p-12 text-center">
+            <p className="text-muted animate-pulse">Carregando imóveis...</p>
           </div>
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={loadData} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredImoveis.map(imovel => {
+                const StatusIcon = statusConfig[imovel.status].icon;
+                return (
+                  <div key={imovel.id} className="bg-white border border-line rounded-card shadow-card overflow-hidden hover:shadow-card-lg hover:border-primary-200 transition-all">
+                    <div className="h-40 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center border-b border-line">
+                      <span className="w-14 h-14 rounded-xl bg-white shadow-card flex items-center justify-center">
+                        <Building2 size={32} className="text-primary" />
+                      </span>
+                    </div>
+                    
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-ink">{imovel.titulo}</h3>
+                        <span className={`px-2.5 py-1 text-xs font-bold flex items-center gap-1 rounded-full ${statusConfig[imovel.status].color}`}>
+                          <StatusIcon size={12} />
+                          {statusConfig[imovel.status].label}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-sm text-muted mb-4">
+                        <MapPin size={14} />
+                        <span>{imovel.bairro}, {imovel.cidade}</span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-2 mb-4 text-sm text-muted">
+                        <div className="flex items-center gap-1">
+                          <Maximize size={14} />
+                          <span>{imovel.area}m²</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BedDouble size={14} />
+                          <span>{imovel.quartos}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Bath size={14} />
+                          <span>{imovel.banheiros}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Car size={14} />
+                          <span>{imovel.vagas}</span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-dashed pt-3 mb-4">
+                        <div className="flex items-center gap-2 text-[#0f8a52] font-bold text-xl">
+                          <DollarSign size={20} />
+                          R$ {imovel.valorVenda.toLocaleString('pt-BR')}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(imovel)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary hover:bg-primary-100 rounded-btn text-sm font-semibold transition-colors"
+                        >
+                          <Edit size={16} />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(imovel.id)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#fdeceb] text-[#c0392b] hover:bg-[#f7d9d7] rounded-btn text-sm font-semibold transition-colors"
+                        >
+                          <Trash2 size={16} />
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredImoveis.length === 0 && (
+              <div className="text-center py-12 bg-white border border-line rounded-card shadow-card mt-4">
+                <Building2 size={48} className="mx-auto text-muted mb-4" />
+                <p className="text-muted">Nenhum imóvel encontrado</p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Modal */}
@@ -336,10 +365,10 @@ export default function PropertiesPage() {
                       valorVenda: formData.valorVenda!,
                     });
                 }}
-                className="bg-white max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+                className="bg-white max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg"
               >
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-bold text-gray-900">
+              <div className="p-6 border-b border-line">
+                <h2 className="text-xl font-bold text-ink">
                   {editingImovel ? 'Editar Imóvel' : 'Novo Imóvel'}
                 </h2>
               </div>
@@ -347,15 +376,16 @@ export default function PropertiesPage() {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Título <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Título <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.titulo}
                       onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                       placeholder="Ex: Apartamento Moderno no Centro"
                     />
+                    {errors.titulo && <p className="text-xs text-[#c0392b] mt-1.5">{errors.titulo}</p>}
                   </div>
 {/* 
                   <div>
@@ -374,11 +404,11 @@ export default function PropertiesPage() {
                   </div> */}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Status <span className="text-red-500">*</span></label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     >
                       <option value="disponivel">Disponível</option>
                       {/* <option value="reservado">Reservado</option> */}
@@ -387,40 +417,43 @@ export default function PropertiesPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Endereço <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.endereco}
                       onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.endereco && <p className="text-xs text-[#c0392b] mt-1.5">{errors.endereco}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bairro <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Bairro <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.bairro}
                       onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.bairro && <p className="text-xs text-[#c0392b] mt-1.5">{errors.bairro}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cidade <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Cidade <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.cidade}
                       onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.cidade && <p className="text-xs text-[#c0392b] mt-1.5">{errors.cidade}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Valor Venda <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Valor Venda <span className="text-red-500">*</span></label>
                     <input
                       type="number"
                       required
@@ -429,8 +462,9 @@ export default function PropertiesPage() {
                         ...formData, 
                         valorVenda: e.target.value === '' ? null : Number(e.target.value) })}
                         // valorVenda: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300 no-spinner"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10 no-spinner"
                     />
+                    {errors.valorVenda && <p className="text-xs text-[#c0392b] mt-1.5">{errors.valorVenda}</p>}
                   </div>
 
                   {/* <div>
@@ -444,66 +478,71 @@ export default function PropertiesPage() {
                   </div> */}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Área (m²)</label>
                     <input
                       type="number"
                       required
                       value={formData.area}
                       onChange={(e) => setFormData({ ...formData, area: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.area && <p className="text-xs text-[#c0392b] mt-1.5">{errors.area}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quartos</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Quartos</label>
                     <input
                       type="number"
                       required
                       value={formData.quartos}
                       onChange={(e) => setFormData({ ...formData, quartos: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.quartos && <p className="text-xs text-[#c0392b] mt-1.5">{errors.quartos}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Banheiros</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Banheiros</label>
                     <input
                       type="number"
                       required
                       value={formData.banheiros}
                       onChange={(e) => setFormData({ ...formData, banheiros: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.banheiros && <p className="text-xs text-[#c0392b] mt-1.5">{errors.banheiros}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vagas</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Vagas</label>
                     <input
                       type="number"
                       required
                       value={formData.vagas}
                       onChange={(e) => setFormData({ ...formData, vagas: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                     />
+                    {errors.vagas && <p className="text-xs text-[#c0392b] mt-1.5">{errors.vagas}</p>}
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Descrição</label>
                     <textarea
                       value={formData.descricao}
                       onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
                       rows={3}
                     />
+                    {errors.descricao && <p className="text-xs text-[#c0392b] mt-1.5">{errors.descricao}</p>}
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t flex gap-3">
+              <div className="p-6 border-t border-line flex gap-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-surface transition-colors"
                 >
                   Cancelar
                 </button>
@@ -513,7 +552,7 @@ export default function PropertiesPage() {
                   type="submit"
                   // onClick={() => handleSave(formData)}
 
-                  className="flex-1 px-4 py-2 bg-orange-600 text-white hover:bg-orange-700"
+                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
                 >
                   {editingImovel ? 'Salvar Alterações' : 'Cadastrar Imóvel'}
                 </button>

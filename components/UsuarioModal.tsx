@@ -12,6 +12,7 @@ interface UsuarioModalProps {
   editingUsuario?: Usuario | null;
   papeis: Papel[];
   errors?: any;
+  usuarios?: Usuario[];
 }
 
 const formatarTelefone = (telefone: string) => {
@@ -29,6 +30,7 @@ export default function UsuarioModal({
   editingUsuario,
   papeis,
   errors,
+  usuarios = [],
 }: UsuarioModalProps) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -38,6 +40,7 @@ export default function UsuarioModal({
     telefone: '',
     dataNascimento: '',
     papelId: '',
+    gestorId: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -55,6 +58,7 @@ export default function UsuarioModal({
         papelId: String(
           papeis.find((p) => p.papel === editingUsuario.papel)?.id ?? ''
         ),
+        gestorId: (editingUsuario as any).gestorId ? String((editingUsuario as any).gestorId) : '',
       });
     } else {
       setFormData({
@@ -65,6 +69,7 @@ export default function UsuarioModal({
         telefone: '',
         dataNascimento: '',
         papelId: papeis.length > 0 ? String(papeis[0].id) : '',
+        gestorId: '',
       });
     }
   }, [isOpen, editingUsuario, papeis]);
@@ -83,6 +88,7 @@ export default function UsuarioModal({
       telefone: formData.telefone,
       dataNascimento: formData.dataNascimento,
       papelId: Number(formData.papelId),
+      gestorId: formData.gestorId ? Number(formData.gestorId) : null,
     };
 
     const sucesso = await onSave(payload);
@@ -94,18 +100,18 @@ export default function UsuarioModal({
   };
 
   const inputClass =
-    'w-full p-2 border border-gray-300 focus:outline-none focus:border-blue-600';
+    'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b border-gray-300">
-          <h2 className="text-xl font-bold text-gray-800">
+      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg">
+        <div className="flex justify-between items-center p-6 border-b border-line">
+          <h2 className="text-xl font-bold text-ink">
             {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100"
+            className="p-2 rounded-lg hover:bg-surface"
           >
             <X size={20} />
           </button>
@@ -113,7 +119,7 @@ export default function UsuarioModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!editingUsuario && (
-            <div className="bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+            <div className="bg-[#eaf1f8] border border-[#cfe0ef] px-4 py-3 text-sm text-[#274b6b] rounded-btn">
               A senha inicial será os <strong>4 últimos dígitos do CPF</strong> e o
               usuário deverá trocá-la no primeiro acesso.
             </div>
@@ -121,7 +127,7 @@ export default function UsuarioModal({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Nome <span className="text-red-500">*</span>
               </label>
               <input
@@ -132,11 +138,11 @@ export default function UsuarioModal({
                 className={inputClass}
                 placeholder="João Silva"
               />
-              {errors?.nome && <p className="text-red-500 text-sm mt-1">{errors.nome}</p>}
+              {errors?.nome && <p className="text-[#c0392b] text-sm mt-1">{errors.nome}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -147,12 +153,12 @@ export default function UsuarioModal({
                 className={inputClass}
                 placeholder="joao@email.com"
               />
-              {errors?.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {errors?.email && <p className="text-[#c0392b] text-sm mt-1">{errors.email}</p>}
             </div>
 
             {!editingUsuario && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                   CPF <span className="text-red-500">*</span>
                 </label>
                 <InputMask
@@ -164,21 +170,21 @@ export default function UsuarioModal({
                     <input {...inputProps} type="text" required className={inputClass} placeholder="000.000.000-00" />
                   )}
                 </InputMask>
-                {errors?.cpf && <p className="text-red-500 text-sm mt-1">{errors.cpf}</p>}
+                {errors?.cpf && <p className="text-[#c0392b] text-sm mt-1">{errors.cpf}</p>}
               </div>
             )}
 
             {editingUsuario && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                   CPF
                 </label>
-                <input type="text" value={formData.cpf} disabled className={`${inputClass} bg-gray-100`} />
+                <input type="text" value={formData.cpf} disabled className={`${inputClass} bg-surface`} />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Gênero <span className="text-red-500">*</span>
               </label>
               <select
@@ -193,7 +199,7 @@ export default function UsuarioModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Telefone <span className="text-red-500">*</span>
               </label>
               <InputMask
@@ -206,12 +212,12 @@ export default function UsuarioModal({
                 )}
               </InputMask>
               {errors?.telefone && (
-                <p className="text-red-500 text-sm mt-1">{errors.telefone}</p>
+                <p className="text-[#c0392b] text-sm mt-1">{errors.telefone}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Data de Nascimento <span className="text-red-500">*</span>
               </label>
               <input
@@ -222,12 +228,12 @@ export default function UsuarioModal({
                 className={inputClass}
               />
               {errors?.dataNascimento && (
-                <p className="text-red-500 text-sm mt-1">{errors.dataNascimento}</p>
+                <p className="text-[#c0392b] text-sm mt-1">{errors.dataNascimento}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Papel <span className="text-red-500">*</span>
               </label>
               <select
@@ -243,7 +249,24 @@ export default function UsuarioModal({
                   </option>
                 ))}
               </select>
-              {errors?.papelId && <p className="text-red-500 text-sm mt-1">{errors.papelId}</p>}
+              {errors?.papelId && <p className="text-[#c0392b] text-sm mt-1">{errors.papelId}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                Gestor responsável
+              </label>
+              <select
+                value={formData.gestorId}
+                onChange={(e) => setFormData({ ...formData, gestorId: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">Sem gestor (equipe sem vínculo)</option>
+                {usuarios.filter(u=> u.papel==='gestor' || u.papel==='admin').map(g=> (
+                  <option key={g.id} value={g.id}>{g.nome} ({g.papel})</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted mt-1">Selecione o gestor deste corretor para aparecer no Dashboard do Gestor.</p>
             </div>
           </div>
 
@@ -251,14 +274,14 @@ export default function UsuarioModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-surface transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 disabled:opacity-60 transition-colors"
             >
               {loading ? 'Salvando...' : editingUsuario ? 'Salvar Alterações' : 'Adicionar Usuário'}
             </button>

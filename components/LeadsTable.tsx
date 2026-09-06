@@ -28,42 +28,72 @@ import { ptBR } from 'date-fns/locale';
 interface LeadsTableProps {
   leads: Lead[];
   onEdit: (lead: Lead) => void;
-  // onDelete: (id: number) => void;
   onView: (lead: Lead) => void;
   onStatusChange: (id: number, status: Lead['status']) => void;
+  // server-side pagination
+  page?: number;
+  totalPages?: number;
+  totalElements?: number;
+  onPageChange?: (page: number) => void;
+  serverSide?: boolean;
+  // filtros controlados pelo pai quando serverSide
+  searchTerm?: string;
+  onSearchChange?: (v: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (v: string) => void;
+  monthFilter?: string;
+  onMonthFilterChange?: (v: string) => void;
 }
 
 export default function LeadsTable({ 
   leads, 
   onEdit, 
-  // onDelete, 
   onView,
-  onStatusChange 
+  onStatusChange,
+  page = 0,
+  totalPages: totalPagesProp,
+  totalElements: totalElementsProp,
+  onPageChange,
+  serverSide = false,
+  searchTerm: searchTermProp,
+  onSearchChange,
+  statusFilter: statusFilterProp,
+  onStatusFilterChange,
+  monthFilter: monthFilterProp,
+  onMonthFilterChange
 }: LeadsTableProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('active');
-  const [monthFilter, setMonthFilter] = useState<string>('all');
-  //const [monthFilter, setMonthFilter] = useState<string>('current');
+  const [searchTermLocal, setSearchTermLocal] = useState('');
+  const [statusFilterLocal, setStatusFilterLocal] = useState<'all' | 'active' | 'archived'>('active');
+  const [monthFilterLocal, setMonthFilterLocal] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  const searchTerm = serverSide ? (searchTermProp ?? '') : searchTermLocal;
+  const setSearchTerm = serverSide ? (onSearchChange ?? (() => {})) : setSearchTermLocal;
+  const statusFilter = serverSide ? (statusFilterProp ?? 'all') : statusFilterLocal;
+  const setStatusFilter: any = serverSide ? (onStatusFilterChange ?? (() => {})) : setStatusFilterLocal;
+  const monthFilter = serverSide ? (monthFilterProp ?? 'all') : monthFilterLocal;
+  const setMonthFilter = serverSide ? (onMonthFilterChange ?? (() => {})) : setMonthFilterLocal;
+
+  const safeLeads = useMemo(() => Array.isArray(leads) ? leads : [], [leads]);
+
   // Status colors
   const statusConfig = {
-    'lead': { label: 'Lead', color: 'bg-gray-100 text-gray-800', icon: Clock },
-    'oportunidade': { label: 'Oportunidade', color: 'bg-blue-100 text-blue-800', icon: Eye },
-    'visita-agendada': { label: 'Visita Agendada', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    'visita-realizada': { label: 'Visita Realizada', color: 'bg-indigo-100 text-indigo-800', icon: Clock },
-    'pasta': { label: 'Pasta', color: 'bg-orange-100 text-orange-800', icon: DollarSign },
-    'aprovado': { label: 'Aprovado', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle },
-    'contrato': { label: 'Contrato', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    'descarte': { label: 'Descarte', color: 'bg-red-100 text-red-800', icon: XCircle },
+    'lead': { label: 'Lead', color: 'bg-[#eef2f7] text-[#5f7488]', icon: Clock },
+    'oportunidade': { label: 'Oportunidade', color: 'bg-[#eaf1f8] text-[#27506f]', icon: Eye },
+    'visita-agendada': { label: 'Visita Agendada', color: 'bg-[#fdf3e0] text-[#b8790a]', icon: Clock },
+    'visita-realizada': { label: 'Visita Realizada', color: 'bg-[#eef1fd] text-[#5258a8]', icon: Clock },
+    'pasta': { label: 'Pasta', color: 'bg-[#fdf1ec] text-[#c05621]', icon: DollarSign },
+    'aprovado': { label: 'Aprovado', color: 'bg-[#e8f6ee] text-[#0f8a52]', icon: CheckCircle },
+    'contrato': { label: 'Contrato', color: 'bg-[#e8f6ee] text-[#0f7a45]', icon: CheckCircle },
+    'descarte': { label: 'Descarte', color: 'bg-[#fdeceb] text-[#c0392b]', icon: XCircle },
   };
 
   // Filtros
   const filteredLeads = useMemo(() => {
-    let result = leads;
+    if (serverSide) return safeLeads; // já filtrado no backend via ?search&status&month
+    let result = safeLeads;
 
-    // Busca
     if (searchTerm) {
       result = result.filter(lead => 
         lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +102,6 @@ export default function LeadsTable({
       );
     }
 
-    // Status (ativo/arquivado)
     if (statusFilter === 'active') {
       result = result.filter(lead => 
         lead.status !== 'contrato' && lead.status !== 'descarte'
@@ -83,7 +112,6 @@ export default function LeadsTable({
       );
     }
 
-    // Mês
     if (monthFilter === 'current') {
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -102,14 +130,22 @@ export default function LeadsTable({
     }
 
     return result;
-  }, [leads, searchTerm, statusFilter, monthFilter]);
+  }, [safeLeads, searchTerm, statusFilter, monthFilter, serverSide]);
 
   // Paginação
-  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
-  const paginatedLeads = filteredLeads.slice(
+  const totalPages = serverSide ? (totalPagesProp ?? 0) : Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = serverSide ? filteredLeads : filteredLeads.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleServerPageChange = (newPage: number) => {
+    if (serverSide && onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setCurrentPage(newPage);
+    }
+  };
 
   // Opções de meses (últimos 6 meses)
   const monthOptions = useMemo(() => {
@@ -142,51 +178,41 @@ export default function LeadsTable({
     return historicoOptions.find(o => o.value === value)?.label || value;
   };
 
+  const currentPageDisplay = serverSide ? page + 1 : currentPage;
+  const totalForDisplay = serverSide ? (totalElementsProp ?? filteredLeads.length) : filteredLeads.length;
+
   return (
     <div className="space-y-4">
       {/* Barra de ações */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-        {/* Busca */}
-        {/* <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Buscar por nome, telefone ou email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div> */}
-
-        {/* Filtros rápidos */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => setStatusFilter('active')}
-            className={`px-4 py-2 text-sm font-medium ${
+            onClick={() => { (setStatusFilter as any)('active'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'active'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-primary text-white shadow-btn'
+                : 'bg-white text-muted border border-line hover:bg-surface'
             }`}
           >
-            Ativos ({leads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length})
+            Ativos ({safeLeads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length})
           </button>
           <button
-            onClick={() => setStatusFilter('archived')}
-            className={`px-4 py-2 text-sm font-medium ${
+            onClick={() => { (setStatusFilter as any)('archived'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'archived'
-                ? 'bg-gray-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-primary text-white shadow-btn'
+                : 'bg-white text-muted border border-line hover:bg-surface'
             }`}
           >
             <Archive size={16} className="inline mr-1" />
-            Arquivados ({leads.filter(l => l.status === 'contrato' || l.status === 'descarte').length})
+            Arquivados ({safeLeads.filter(l => l.status === 'contrato' || l.status === 'descarte').length})
           </button>
           <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-4 py-2 text-sm font-medium ${
+            onClick={() => { (setStatusFilter as any)('all'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'all'
-                ? 'bg-gray-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-primary text-white shadow-btn'
+                : 'bg-white text-muted border border-line hover:bg-surface'
             }`}
           >
             Todos
@@ -194,70 +220,28 @@ export default function LeadsTable({
         </div>
       </div>
 
-      {/* Filtro de mês */}
-      {/* <div className="flex gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-500" />
-          <span className="text-sm text-gray-700 font-medium">Período:</span>
-        </div>
-        <select
-          value={monthFilter}
-          onChange={(e) => {
-            setMonthFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="current">Mês atual</option>
-          <option value="all">Todos os períodos</option>
-          <optgroup label="Meses anteriores">
-            {monthOptions.map(month => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-
-        <div className="ml-auto text-sm text-gray-600">
-          {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} encontrado{filteredLeads.length !== 1 ? 's' : ''}
-        </div>
-      </div> */}
-
       {/* Tabela */}
-      <div className="bg-white border border-gray-300 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white border border-line rounded-card shadow-card overflow-hidden">
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-200 border-b border-gray-300">
+            <thead className="bg-[#eef2f7] border-b border-line">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Nome
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Contato
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Valor
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Origem
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                  Data
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
-                  Ações
-                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Nome</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Contato</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Valor</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Origem</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Responsável</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Data</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-line">
               {paginatedLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
-                    <div className="text-gray-400">
+                  <td colSpan={8} className="px-4 py-12 text-center">
+                    <div className="text-muted">
                       <Search size={48} className="mx-auto mb-4 opacity-50" />
                       <p className="text-lg font-medium">Nenhum lead encontrado</p>
                       <p className="text-sm mt-1">Tente ajustar os filtros ou busca</p>
@@ -267,111 +251,36 @@ export default function LeadsTable({
               ) : (
                 paginatedLeads.map((lead) => {
                   const status = statusConfig[lead.status];
-
                   if (!status) {
                     console.error("Status inválido:", lead.status);
                     return null;
                   }
-
                   const StatusIcon = status.icon;
                   return (
-                    <tr 
-                      key={lead.id} 
-                      className="hover:bg-gray-100"
-                    >
-                      <td className="px-4 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900">{lead.nome}</div>
-                          {/* <div className="text-sm text-gray-500">{lead.tipoImovel}</div> */}
-                        </div>
-                      </td>
+                    <tr key={lead.id} className="hover:bg-surface">
+                      <td className="px-4 py-4"><div className="font-medium text-ink">{lead.nome}</div></td>
                       <td className="px-4 py-4">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <Phone size={14} className="text-gray-400" />
-                            {formatarTelefone(lead.telefone)}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Mail size={14} className="text-gray-400" />
-                            {lead.email}
-                          </div>
+                          <div className="flex items-center gap-2 text-sm text-ink"><Phone size={14} className="text-muted" />{formatarTelefone(lead.telefone)}</div>
+                          <div className="flex items-center gap-2 text-sm text-muted"><Mail size={14} className="text-muted" />{lead.email}</div>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => {
+                        <select value={lead.status} onChange={(e) => {
                             const newStatus = e.target.value as Lead['status']
                             if (newStatus === 'descarte') {
-                              if (confirm('Tem certeza que deseja descartar este lead?')) {
-                                onEdit({ ...lead, status: newStatus }); // 👈 abre o modal
-                              }
-                            } else {
-                              onStatusChange(lead.id, newStatus);
-                            }
-                          }}
-                          className={`
-                            px-3 py-1 text-xs font-medium
-                            border-0 cursor-pointer
-                            ${statusConfig[lead.status].color}
-                          `}
-                        >
-                          <option value="lead">Lead</option>
-                          <option value="oportunidade">Oportunidade</option>
-                          <option value="visita-agendada">Visita Agendada</option>
-                          <option value="visita-realizada">Visita Realizada</option>
-                          <option value="pasta">Pasta</option>
-                          <option value="aprovado">Aprovado</option>
-                          <option value="contrato">Contrato</option>
-                          <option value="descarte">Descarte</option>
+                              if (confirm('Tem certeza que deseja descartar este lead?')) onEdit({ ...lead, status: newStatus });
+                            } else onStatusChange(lead.id, newStatus);
+                          }} className={`px-3 py-1 text-xs font-bold border-0 cursor-pointer rounded-full ${statusConfig[lead.status].color}`}>
+                          <option value="lead">Lead</option><option value="oportunidade">Oportunidade</option><option value="visita-agendada">Visita Agendada</option><option value="visita-realizada">Visita Realizada</option><option value="pasta">Pasta</option><option value="aprovado">Aprovado</option><option value="contrato">Contrato</option><option value="descarte">Descarte</option>
                         </select>
-                        {lead.status === 'descarte' && lead.motivoDescarte && (
-                          <p className="text-xs text-red-600 mt-2">
-                            <strong>Motivo do Descarte:</strong> {lead.motivoDescarte}
-                          </p>
-                        )}
+                        {lead.status === 'descarte' && lead.motivoDescarte && (<p className="text-xs text-[#c0392b] mt-2"><strong>Motivo:</strong> {lead.motivoDescarte}</p>)}
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className='space-y-1'>
-                          <span className="text-sm text-gray-700">{getOrigemLabel(lead.origem)}</span>
-                          <span className="text-sm text-gray-500">{getHistoricoLabel(lead.historico)}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-500">
-                          {format(new Date(lead.dataAtualizacao), 'dd/MM/yy', { locale: ptBR })}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => onView(lead)}
-                            className="p-2 text-blue-600 hover:bg-blue-50"
-                            title="Ver detalhes"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => onEdit(lead)}
-                            className="p-2 text-gray-600 hover:bg-gray-100"
-                            title="Editar"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          {/* <button
-                            onClick={() => onDelete(lead.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={16} />
-                          </button> */}
-                        </div>
-                      </td>
+                      <td className="px-4 py-4"><div className="text-sm font-medium text-ink">R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}</div></td>
+                      <td className="px-4 py-4"><div className="space-y-1"><span className="text-sm font-medium text-ink">{getOrigemLabel(lead.origem)}</span>{lead.historico && (<span className="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-[#eef2f7] text-muted">{getHistoricoLabel(lead.historico)}</span>)}</div></td>
+                      <td className="px-4 py-4"><div className="text-xs"><p className="font-medium text-ink">{(lead as any).corretor?.nome || (lead as any).corretorNome || lead.corretorNome || '-'}</p><p className="text-muted">{(lead as any).equipe?.nome || (lead as any).equipeNome || lead.equipeNome || '-'}</p>{(lead.statusAtribuicao === 'AGUARDANDO_REDISTRIBUICAO' || (lead as any).statusAtribuicao==='AGUARDANDO_REDISTRIBUICAO') && (<span className="inline-flex mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold">AGUARDANDO</span>)}</div></td>
+                      <td className="px-4 py-4"><div className="text-sm text-muted">{format(new Date(lead.dataAtualizacao), 'dd/MM/yy', { locale: ptBR })}</div></td>
+                      <td className="px-4 py-4"><div className="flex items-center justify-center gap-2"><button onClick={() => onView(lead)} className="p-2 rounded-lg text-primary hover:bg-primary-50"><Eye size={16} /></button><button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted hover:bg-surface"><Edit size={16} /></button></div></td>
                     </tr>
                   );
                 })
@@ -380,27 +289,62 @@ export default function LeadsTable({
           </table>
         </div>
 
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-line">
+          {paginatedLeads.length === 0 ? (
+            <div className="p-8 text-center text-muted">
+              <Search size={32} className="mx-auto mb-3 opacity-50" />
+              <p className="font-medium">Nenhum lead encontrado</p>
+              <p className="text-sm mt-1">Tente ajustar os filtros</p>
+            </div>
+          ) : (
+            paginatedLeads.map((lead) => {
+              const status = statusConfig[lead.status];
+              if (!status) return null;
+              return (
+                <div key={lead.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="font-semibold text-ink line-clamp-1">{lead.nome}</span>
+                    <span className={`px-2 py-0.5 text-xs font-bold rounded-full shrink-0 ${status.color}`}>{status.label}</span>
+                  </div>
+                  <div className="text-sm text-muted space-y-1">
+                    <div className="flex items-center gap-2"><Phone size={14} />{formatarTelefone(lead.telefone)}</div>
+                    <div className="flex items-center gap-2"><Mail size={14} />{lead.email}</div>
+                    <div className="flex items-center gap-2"><DollarSign size={14} />R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}</div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted">{format(new Date(lead.dataAtualizacao), 'dd/MM/yy')}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => onView(lead)} className="p-2 rounded-lg text-primary bg-primary-50"><Eye size={16} /></button>
+                      <button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted bg-surface"><Edit size={16} /></button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
         {/* Paginação */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-300 flex items-center justify-between bg-gray-100">
-            <div className="text-sm text-gray-600">
-              Página {currentPage} de {totalPages} • 
-              Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredLeads.length)} de {filteredLeads.length}
+          <div className="px-4 py-3 border-t border-line flex flex-col sm:flex-row gap-2 items-center justify-between bg-surface text-sm">
+            <div className="text-muted text-xs sm:text-sm">
+              Página {currentPageDisplay} de {totalPages} • {serverSide ? totalElementsProp : totalForDisplay} total • Mostrando {serverSide ? paginatedLeads.length : Math.min(paginatedLeads.length, totalForDisplay)} nesta página
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                onClick={() => serverSide ? onPageChange?.(Math.max(0, page-1)) : handleServerPageChange(Math.max(1, currentPage-1))}
+                disabled={serverSide ? page===0 : currentPage===1}
+                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-white disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={16} /> Anterior
               </button>
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                onClick={() => serverSide ? onPageChange?.(Math.min(totalPages-1, page+1)) : handleServerPageChange(Math.min(totalPages, currentPage+1))}
+                disabled={serverSide ? page+1>=totalPages : currentPage===totalPages}
+                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-white disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                <ChevronRight size={16} />
+                Próxima <ChevronRight size={16} />
               </button>
             </div>
           </div>

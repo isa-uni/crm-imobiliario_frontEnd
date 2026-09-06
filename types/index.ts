@@ -10,6 +10,27 @@ export interface Tramitacao {
   usuarioNome?: string;
 }
 
+export type StatusAtribuicao = 'ATRIBUIDO' | 'AGUARDANDO_REDISTRIBUICAO'
+
+export interface Equipe {
+  id: number
+  nome: string
+  descricao?: string
+  gestorId?: number | null
+  gestorNome?: string | null
+  ativo: boolean
+}
+
+export interface Notificacao {
+  id: number
+  tipo: string
+  mensagem: string
+  leadId?: number
+  leadNome?: string
+  lida: boolean
+  dataCriacao: string
+}
+
 export interface Lead {
   id: number;
   nome: string;
@@ -19,13 +40,17 @@ export interface Lead {
   historico: string;
   status: LeadStatus;
   valorInteresse: number;
-  // tipoImovel: string;
   imovel?: Imovel | null; 
   imovelId?: number | null;
   observacao?: string;
   dataCriacao: string;
   dataAtualizacao: string;
   motivoDescarte?: string;
+  corretorId?: number | null
+  corretorNome?: string | null
+  equipeId?: number | null
+  equipeNome?: string | null
+  statusAtribuicao?: StatusAtribuicao
 }
 
 export interface PipelineStage {
@@ -83,6 +108,10 @@ export interface Usuario {
   papel: string;
   ativo: boolean;
   trocarSenha: boolean;
+  gestorId?: number | null;
+  gestorNome?: string | null;
+  equipeId?: number | null;
+  equipeNome?: string | null;
 }
 
 export interface UsuarioAutenticado {
@@ -104,6 +133,14 @@ export interface Papel {
   ativo?: boolean;
 }
 
+export interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
 export interface UsuarioPayload {
   nome: string;
   email: string;
@@ -112,4 +149,13 @@ export interface UsuarioPayload {
   telefone: string;
   dataNascimento: string;
   papelId: number;
+  gestorId?: number | null;
+}
+
+export interface PerfilPayload {
+  nome: string;
+  email: string;
+  genero: string;
+  telefone: string;
+  dataNascimento: string;
 }

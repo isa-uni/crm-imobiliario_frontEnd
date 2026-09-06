@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import RouteShell from '@/components/RouteShell'
+import { ToastProvider, GlobalToastSetter } from '@/components/ui/ToastProvider'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,9 +20,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <RouteShell>
-          {children}
-        </RouteShell>
+        <ToastProvider>
+          <GlobalToastSetter />
+          <ErrorBoundary>
+            <RouteShell>
+              {children}
+            </RouteShell>
+          </ErrorBoundary>
+        </ToastProvider>
       </body>
     </html>
   )

@@ -1,5 +1,5 @@
 import { api } from "./api"
-import type { UsuarioPayload } from "@/types"
+import type { PerfilPayload, UsuarioPayload } from "@/types"
 
 export const usuarioService = {
 
@@ -18,12 +18,27 @@ export const usuarioService = {
     return response.data
   },
 
-  async cadastrar(data: UsuarioPayload) {
+  async atualizarMe(data: PerfilPayload) {
+    const response = await api.put("/usuarios/me", data)
+    // Backend agora retorna DadosTokenJWT { token, usuario } sem version++ (normal)
+    // com Set-Cookie httpOnly + body token para atualizar localStorage legacy
+    const body = response.data
+    if (body?.token && body?.usuario) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("token", body.token)
+        localStorage.setItem("usuario", JSON.stringify(body.usuario))
+      }
+      return body.usuario
+    }
+    return body
+  },
+
+  async cadastrar(data: UsuarioPayload & { gestorId?: number | null }) {
     const response = await api.post("/usuarios/cadastrar", data)
     return response.data
   },
 
-  async atualizar(id: number, data: Partial<UsuarioPayload>) {
+  async atualizar(id: number, data: Partial<UsuarioPayload> & { gestorId?: number | null }) {
     const response = await api.put(`/usuarios/atualizar/${id}`, data)
     return response.data
   },

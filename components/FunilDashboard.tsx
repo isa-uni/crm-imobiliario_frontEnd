@@ -7,13 +7,13 @@ interface FunilProps {
 }
 
 const ETAPAS = [
-  { status: "lead", label: "Leads", cor: "bg-blue-500" },
-  { status: "oportunidade", label: "Ops", cor: "bg-indigo-500" },
-  { status: "visita-agendada", label: "Agend.", cor: "bg-teal-500" },
-  { status: "visita-realizada", label: "Visitas", cor: "bg-green-500" },
-  { status: "pasta", label: "Pastas", cor: "bg-orange-500" },
-  { status: "aprovado", label: "Aprov.", cor: "bg-cyan-500" },
-  { status: "contrato", label: "Vendas", cor: "bg-purple-600" },
+  { status: "lead", label: "Leads", cor: "bg-primary-500" },
+  { status: "oportunidade", label: "Ops", cor: "bg-primary-400" },
+  { status: "visita-agendada", label: "Agend.", cor: "bg-accent-500" },
+  { status: "visita-realizada", label: "Visitas", cor: "bg-[#4a9c76]" },
+  { status: "pasta", label: "Pastas", cor: "bg-[#e8914a]" },
+  { status: "aprovado", label: "Aprov.", cor: "bg-[#3fb3b3]" },
+  { status: "contrato", label: "Vendas", cor: "bg-[#7a5ca8]" },
 ] as const;
 
 export default function Funil({ leads }: FunilProps) {
@@ -36,8 +36,8 @@ export default function Funil({ leads }: FunilProps) {
   });
 
   return (
-    <div className="w-full bg-white border border-gray-300 p-6">
-      <h2 className="mb-4 text-xl font-semibold text-gray-800">
+    <div className="w-full bg-white border border-line rounded-card shadow-card p-6">
+      <h2 className="mb-4 text-xl font-semibold text-ink">
         Funil de processos
       </h2>
 

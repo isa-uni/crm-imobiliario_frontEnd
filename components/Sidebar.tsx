@@ -8,6 +8,7 @@ import type { UsuarioAutenticado } from '@/types';
 import {
   Home,
   Users,
+  User,
   UserCog,
   BarChart3,
   FileText,
@@ -20,6 +21,8 @@ import {
   TrendingUp,
   Calendar,
   CheckCircle,
+  Bell,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,22 +38,21 @@ export default function Sidebar({ children }: SidebarProps) {
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout(true);
     setUsuario(null);
-    router.push('/login');
   };
 
   const isActive = (path: string) => pathname === path;
 
   const labelPapel = (papel: string) => {
-    const nomes: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor' };
+    const nomes: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor', gestor: 'Gestor' };
     return nomes[papel] || papel;
   };
 
   const menuItems: (
-    | { id: string; label: string; icon: React.ReactNode; path: string; adminOnly?: boolean }
-    | { id: string; submenu: { label: string; path: string; icon?: React.ReactNode }[]; adminOnly?: boolean }
+    | { id: string; label: string; icon: React.ReactNode; path: string; adminOnly?: boolean; gestorOnly?: boolean }
+    | { id: string; submenu: { label: string; path: string; icon?: React.ReactNode }[]; adminOnly?: boolean; gestorOnly?: boolean }
   )[] = [
     {
       id: 'dashboard',
@@ -59,17 +61,24 @@ export default function Sidebar({ children }: SidebarProps) {
       path: '/dashboard',
     },
     {
+      id: 'dashboard-gestor',
+      label: 'Dashboard Gestor',
+      icon: <BarChart3 size={20} />,
+      path: '/dashboard/gestor',
+      gestorOnly: true,
+    },
+    {
       id: 'leads',
       label: 'Leads',
       icon: <Users size={20} />,
       path: '/leads',
     },
-    //  {
-    //   id: 'relogio-vendas',
-    //   label: 'Relógio de Vendas',
-    //   icon: <TrendingUp size={20} />,
-    //   path: '/relogio-vendas',
-    // },
+     {
+      id: 'relogio-vendas',
+      label: 'Relógio de Vendas',
+      icon: <TrendingUp size={20} />,
+      path: '/relogio-vendas',
+    },
     {
       id: 'properties',
       label: 'Imóveis',
@@ -77,11 +86,37 @@ export default function Sidebar({ children }: SidebarProps) {
       path: '/properties',
     },
     {
+      id: 'equipes',
+      label: 'Equipes',
+      icon: <Building2 size={20} />,
+      path: '/equipes',
+      adminOnly: true,
+    },
+    {
+      id: 'redistribuicao',
+      label: 'Redistribuição',
+      icon: <AlertTriangle size={20} />,
+      path: '/redistribuicao',
+      gestorOnly: true,
+    },
+    {
       id: 'usuarios',
       label: 'Usuários',
       icon: <UserCog size={20} />,
       path: '/usuarios',
       adminOnly: true,
+    },
+    {
+      id: 'notificacoes',
+      label: 'Notificações',
+      icon: <Bell size={20} />,
+      path: '/notificacoes',
+    },
+    {
+      id: 'perfil',
+      label: 'Meu Perfil',
+      icon: <User size={20} />,
+      path: '/perfil',
     },
     // {
     //   id: 'analytics',
@@ -110,14 +145,14 @@ export default function Sidebar({ children }: SidebarProps) {
   ];
 
   return (
-    <div className="relative min-h-screen bg-gray-100">
+    <div className="relative min-h-screen bg-surface">
       {/* Botão hamburger - mobile */}
       {!isOpen && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 p-2 bg-white border border-gray-300 lg:hidden hover:bg-gray-100"
+          className="fixed top-4 left-4 z-50 p-2 bg-white border border-line rounded-btn shadow-card lg:hidden hover:bg-surface"
         >
-          <Menu size={24} className="text-gray-700" />
+          <Menu size={24} className="text-primary" />
         </button>
       )}
 
@@ -132,33 +167,37 @@ export default function Sidebar({ children }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-white z-50 
+          fixed top-0 left-0 h-screen w-64 bg-primary z-50 
           ${isOpen ? 'block' : 'hidden lg:block'}
-          border-r border-gray-300
         `}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-300">
-          <div className="flex items-center gap-2">
-            <Building2 size={20} className="text-gray-800" />
-            <span className="text-lg font-bold text-gray-800">CRM Imóveis</span>
+        {/* Header / Brand */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-white font-black shadow-btn">
+              <Building2 size={20} className="text-primary" />
+            </span>
+            <div className="leading-tight">
+              <span className="text-base font-extrabold text-white tracking-tight">CRM Imóveis</span>
+              <span className="block text-[11px] font-medium text-primary-100/70">Gestão de leads e vendas</span>
+            </div>
           </div>
           <button
             onClick={closeSidebar}
-            className="lg:hidden p-1 hover:bg-gray-100"
+            className="lg:hidden p-1 rounded-lg hover:bg-white/10 text-primary-100"
           >
-            <X size={20} className="text-gray-600" />
+            <X size={20} />
           </button>
         </div>
 
         {/* User info */}
-        <div className="px-4 py-4 border-b border-gray-300">
-          <p className="text-sm font-semibold text-gray-800 truncate">
+        <div className="px-4 py-4 border-b border-white/10">
+          <p className="text-sm font-semibold text-white truncate">
             {usuario?.nome || 'Usuário'}
           </p>
-          <p className="text-xs text-gray-500 truncate">{usuario?.email || ''}</p>
+          <p className="text-xs text-primary-100/70 truncate">{usuario?.email || ''}</p>
           {usuario?.papel && (
-            <span className="mt-1 inline-flex items-center px-2 py-0.5 text-xs bg-gray-200 text-gray-700">
+            <span className="mt-2 inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-accent text-primary">
               {labelPapel(usuario.papel)}
             </span>
           )}
@@ -168,7 +207,11 @@ export default function Sidebar({ children }: SidebarProps) {
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <ul className="space-y-1">
             {menuItems
-              .filter((item) => !item.adminOnly || usuario?.papel === 'admin')
+              .filter((item) => {
+                if ((item as any).adminOnly && usuario?.papel !== 'admin') return false;
+                if ((item as any).gestorOnly && !['admin','gestor'].includes(usuario?.papel || '')) return false;
+                return true;
+              })
               .map((item) => (
                 <li key={item.id}>
                   {'submenu' in item ? (
@@ -179,11 +222,11 @@ export default function Sidebar({ children }: SidebarProps) {
                             href={subItem.path}
                             onClick={closeSidebar}
                             className={`
-                              flex items-center gap-3 px-3 py-2
+                              flex items-center gap-3 px-3 py-2.5 rounded-btn transition-colors
                               ${
                                 isActive(subItem.path)
-                                  ? 'bg-gray-200 text-gray-900 font-medium'
-                                  : 'text-gray-700 hover:bg-gray-100'
+                                  ? 'bg-accent text-primary font-semibold'
+                                  : 'text-primary-100 hover:bg-white/10 hover:text-white'
                               }
                             `}
                           >
@@ -198,11 +241,11 @@ export default function Sidebar({ children }: SidebarProps) {
                       href={item.path}
                       onClick={closeSidebar}
                       className={`
-                        flex items-center gap-3 px-3 py-2
+                        flex items-center gap-3 px-3 py-2.5 rounded-btn transition-colors
                         ${
                           isActive(item.path)
-                            ? 'bg-gray-200 text-gray-900 font-medium'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-accent text-primary font-semibold'
+                            : 'text-primary-100 hover:bg-white/10 hover:text-white'
                         }
                       `}
                     >
@@ -216,18 +259,10 @@ export default function Sidebar({ children }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-gray-300 space-y-1">
-          {/* <Link
-            href="/trocar-senha"
-            onClick={closeSidebar}
-            className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100"
-          >
-            <KeyRound size={20} />
-            <span className="text-sm">Alterar senha</span>
-          </Link> */}
+        <div className="px-3 py-4 border-t border-white/10 space-y-1">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-btn text-primary-100 hover:bg-red-500/20 hover:text-red-300 transition-colors"
           >
             <LogOut size={20} />
             <span className="text-sm">Sair</span>
@@ -236,7 +271,7 @@ export default function Sidebar({ children }: SidebarProps) {
       </aside>
 
       {/* Main content */}
-      <main className="min-h-screen lg:ml-64">{children}</main>
+      <main className="min-h-screen lg:ml-64 bg-surface">{children}</main>
     </div>
   );
 }
