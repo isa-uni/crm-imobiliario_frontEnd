@@ -86,6 +86,12 @@ export default function Sidebar({ children }: SidebarProps) {
       path: '/properties',
     },
     {
+      id: 'empreendimentos',
+      label: 'Empreendimentos',
+      icon: <Building2 size={20} />,
+      path: '/empreendimentos',
+    },
+    {
       id: 'equipes',
       label: 'Equipes',
       icon: <Building2 size={20} />,
