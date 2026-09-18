@@ -111,6 +111,7 @@ export interface EmpreendimentoDetalhe {
   numero?: string
   complemento?: string
   bairro?: string
+  regiao?: string
   cidade?: string
   uf?: string
   cep?: string

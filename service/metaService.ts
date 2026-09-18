@@ -6,20 +6,21 @@ export interface MetaDTO {
   usuarioNome: string
   mesReferencia: string // yyyy-MM-01
   metaContratos: number
+  origem: 'GESTOR' | 'CORRETOR'
   dataCriacao: string
   dataAtualizacao: string
 }
 
+export interface MetaResumoDTO {
+  metaPropria: MetaDTO | null
+  metaGestor: MetaDTO | null
+  metaEfetiva: MetaDTO | null
+}
+
 export const metaService = {
-  async getMinhaMeta(mesReferencia: string): Promise<MetaDTO | null> {
-    try {
-      const res = await api.get("/metas/me", { params: { mesReferencia } })
-      if (res.status === 204 || !res.data) return null
-      return res.data
-    } catch (e: any) {
-      if (e?.response?.status === 204 || e?.response?.status === 404) return null
-      throw e
-    }
+  async getMinhaMeta(mesReferencia: string): Promise<MetaResumoDTO> {
+    const res = await api.get("/metas/me", { params: { mesReferencia } })
+    return res.data ?? { metaPropria: null, metaGestor: null, metaEfetiva: null }
   },
 
   async salvarMeta(data: { usuarioId: number; mesReferencia: string; metaContratos: number }): Promise<MetaDTO> {

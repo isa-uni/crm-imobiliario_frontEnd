@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Imovel, Lead, LeadStatus } from '@/types';
+import { Lead, LeadStatus } from '@/types';
 import { origemOptions } from '@/service/origemOptions';
 import { historicoOptions } from '@/service/historicoOptions';
-import { imovelService } from '@/service/imovelService';
+import { empreendimentoIaService, EmpreendimentoCard } from '@/service/empreendimentoIaService';
+import { brl, faixa } from '@/lib/format';
 import { X } from 'lucide-react';
 import InputMask from 'react-input-mask';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -14,7 +15,7 @@ import { InlineError } from '@/components/ui/ErrorState';
 interface LeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (lead: Omit<Lead, 'id' | 'dataCriacao' | 'dataAtualizacao'>) => Promise<boolean>;
+  onSave: (lead: Omit<Lead, 'id' | 'dataCriacao' | 'dataAtualizacao'> & { limparEmpreendimento?: boolean }) => Promise<boolean>;
   editingLead?: Lead | null;
   errors?: any;
 }
@@ -27,7 +28,7 @@ type LeadFormData = {
   historico: string;
   status: LeadStatus;
   valorInteresse: number;
-  imovelId: number | null;
+  empreendimentoId: number | null;
   observacao: string;
   motivoDescarte: string;
 };
@@ -43,14 +44,14 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     status: 'lead' as Lead['status'],
     valorInteresse: 0,
     // tipoImovel: '',
-    imovelId: null,
+    empreendimentoId: null,
     observacao: '',
     motivoDescarte: '',
   });
 
   const { toast } = useToast();
-  const [imoveis, setImoveis] = useState<any[]>([]);
-  const [imoveisError, setImoveisError] = useState<string | null>(null);
+  const [empreendimentos, setEmpreendimentos] = useState<EmpreendimentoCard[]>([]);
+  const [empreendimentosError, setEmpreendimentosError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const formatarTelefone = (telefone: string) => {
@@ -71,7 +72,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         status: editingLead.status,
         valorInteresse: editingLead.valorInteresse,
         // tipoImovel: editingLead.tipoImovel,
-        imovelId: editingLead.imovel?.id ?? null,
+        empreendimentoId: editingLead.empreendimentoId ?? null,
         observacao: editingLead.observacao || '',
         motivoDescarte: editingLead.motivoDescarte || '',
       });
@@ -85,7 +86,7 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         status: 'lead',
         valorInteresse: 0,
         // tipoImovel: '',
-        imovelId: null,
+        empreendimentoId: null,
         observacao: '',
         motivoDescarte: '',
       });
@@ -93,22 +94,22 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
   }, [editingLead, isOpen]);
 
   useEffect(() => {
-  const carregarImoveis = async () => {
+  const carregarEmpreendimentos = async () => {
     try {
-      const data = await imovelService.getDisponivel();
-      setImoveis(data);
-      setImoveisError(null);
+      const data = await empreendimentoIaService.listarCards({ size: 100, sort: 'nome,asc' });
+      setEmpreendimentos(data?.content ?? []);
+      setEmpreendimentosError(null);
     } catch (error: any) {
       const parsed = parseApiError(error);
-      const msg = 'Não foi possível carregar imóveis';
-      setImoveisError(msg);
+      const msg = 'Não foi possível carregar empreendimentos';
+      setEmpreendimentosError(msg);
       toast(parsed.message || msg, 'error');
       console.error(error);
     }
   };
 
   if (isOpen) {
-    carregarImoveis();
+    carregarEmpreendimentos();
   }
 }, [isOpen]);
 
@@ -125,7 +126,9 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
       return;
     }
 
-    const sucesso = await onSave(formData);
+    // marca a intenção explícita de remover o empreendimento vinculado quando o campo é deixado em
+    // branco — sem isso, o backend não teria como distinguir "não mudei este campo" de "quero limpar"
+    const sucesso = await onSave({ ...formData, limparEmpreendimento: formData.empreendimentoId === null });
     console.log('Sucesso no salvamento: ', sucesso);
 
 
@@ -138,24 +141,22 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
   //console.log("formData antes de salvar 1", formData);
 
-  const handleImovelSelect = (imovelId: number | null) => {
-    console.log("formData antes de salvar o imovel 2", formData);
-    if (!imovelId) {
+  const handleEmpreendimentoSelect = (empreendimentoId: number | null) => {
+    if (!empreendimentoId) {
       setFormData({
         ...formData,
-        imovelId: null,
-        // valorInteresse: 0
+        empreendimentoId: null,
       });
       return;
     }
 
-    const imovel = imoveis.find(i => i.id === imovelId);
+    const empreendimento = empreendimentos.find(e => e.id === empreendimentoId);
 
-    if (imovel) {
+    if (empreendimento) {
       setFormData({
         ...formData,
-        imovelId,
-        // valorInteresse: imovel.valorVenda,
+        empreendimentoId,
+        valorInteresse: empreendimento.precoMin ?? formData.valorInteresse,
       });
     }
   };
@@ -349,27 +350,27 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 
           <div>
             <label className="block text-sm font-medium text-muted mb-1">
-              Imóvel de Interesse
+              Empreendimento de Interesse
             </label>
             <select
-              value={formData.imovelId ?? ""}
+              value={formData.empreendimentoId ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
-                handleImovelSelect(value ? Number(value) : null);
+                handleEmpreendimentoSelect(value ? Number(value) : null);
               }}
               className="w-full p-2 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
             >
-              <option value="">Nenhum imóvel específico</option>
-              {imoveis.map(imovel => (
-                <option key={imovel.id} value={imovel.id}>
-                  {imovel.titulo} - R$ {imovel.valorVenda.toLocaleString('pt-BR')}
+              <option value="">Nenhum empreendimento específico</option>
+              {empreendimentos.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.nome}{(emp.precoMin != null || emp.precoMax != null) ? ` - ${faixa(emp.precoMin, emp.precoMax, brl)}` : ''}
                 </option>
               ))}
             </select>
-            {imoveisError && <InlineError message={imoveisError} />}
-            {!imoveisError && imoveis.length === 0 && (
+            {empreendimentosError && <InlineError message={empreendimentosError} />}
+            {!empreendimentosError && empreendimentos.length === 0 && (
               <p className="text-xs text-muted mt-1">
-                Nenhum imóvel disponível. Cadastre imóveis em &quot;Imóveis&quot; primeiro.
+                Nenhum empreendimento disponível. Cadastre empreendimentos em &quot;Empreendimentos&quot; primeiro.
               </p>
             )}
           </div>

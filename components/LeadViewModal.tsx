@@ -169,8 +169,8 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
                   <Building2 size={20} className="text-[#c05621]" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">Imóvel de Interesse</p>
-                  <p className="text-sm font-medium text-ink">{lead.imovel?.titulo}</p>
+                  <p className="text-xs text-muted mb-1">Empreendimento de Interesse</p>
+                  <p className="text-sm font-medium text-ink">{lead.empreendimentoNome || "—"}</p>
                 </div>
               </div>
             </div>

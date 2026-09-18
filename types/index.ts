@@ -40,8 +40,8 @@ export interface Lead {
   historico: string;
   status: LeadStatus;
   valorInteresse: number;
-  imovel?: Imovel | null; 
-  imovelId?: number | null;
+  empreendimentoId?: number | null;
+  empreendimentoNome?: string | null;
   observacao?: string;
   dataCriacao: string;
   dataAtualizacao: string;

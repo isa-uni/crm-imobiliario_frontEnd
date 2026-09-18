@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Users, TrendingUp, DollarSign, Target, Clock, AlertTriangle,
-  RefreshCw, BarChart3, Building2, Tag, Calendar, Award, ArrowUp, ArrowDown
+  RefreshCw, Building2, Tag, Calendar, Award, ArrowUp, ArrowDown
 } from 'lucide-react'
 import { authService } from '@/service/authService'
 import { dashboardGestorService, DashboardGestorDTO } from '@/service/dashboardGestorService'
@@ -157,6 +157,7 @@ export default function DashboardGestor() {
   const k = data!.kpis
   const d = data!
   const fmtBRL = (v:number) => v >= 1000000 ? `R$ ${(v/1000000).toFixed(1)}M` : v >= 1000 ? `R$ ${(v/1000).toFixed(0)}k` : `R$ ${v.toLocaleString('pt-BR')}`
+  const fmtBRLFloat = (v:number) => v >= 1000000 ? `R$ ${(v/1000000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M` : v >= 1000 ? `R$ ${(v/1000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}k` : `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   return (
     <div className="min-h-screen bg-surface">
@@ -204,12 +205,11 @@ export default function DashboardGestor() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <KpiCard icon={<Users size={18}/>} label="Leads recebidos" value={`${k.leadsRecebidos}`} sub={`${k.leadsRecebidosAnterior} no período anterior`} variacao={k.variacaoLeads} />
           <KpiCard icon={<Award size={18}/>} label="Negócios fechados" value={`${k.negociosFechados}`} sub={`${k.negociosAnterior} anterior`} variacao={k.variacaoNegocios} />
-          <KpiCard icon={<DollarSign size={18}/>} label="Valor vendido" value={fmtBRL(k.valorVendido)} sub={fmtBRL(k.valorAnterior)+' anterior'} variacao={k.variacaoValor} />
-          <KpiCard icon={<Target size={18}/>} label="Taxa conversão" value={`${k.taxaConversao.toFixed(1)}%`} sub={`${k.leadsRecebidos} leads base`} />
-          <KpiCard icon={<BarChart3 size={18}/>} label="Ticket médio" value={fmtBRL(k.ticketMedio)} sub={`${k.negociosFechados} negócios`} />
+          <KpiCard icon={<DollarSign size={18}/>} label="Valor vendido" value={fmtBRLFloat(k.valorVendido)} sub={fmtBRL(k.valorAnterior)+' anterior'} variacao={k.variacaoValor} />
+          <KpiCard icon={<Target size={18}/>} label="Taxa conversão" value={`${k.taxaConversao.toFixed(1)}%`} />
           <KpiCard icon={<Clock size={18}/>} label="Tempo médio" value={`${k.tempoMedioDias.toFixed(0)} dias`} sub="entrada → fechamento" />
         </div>
 
@@ -236,9 +236,8 @@ export default function DashboardGestor() {
                   <tr className="text-xs text-muted border-b border-line">
                     <th className="text-left py-2.5 font-semibold">Corretor</th>
                     <th className="text-right py-2.5 font-semibold">Leads</th>
-                    <th className="text-right py-2.5 font-semibold">Contatos</th>
-                    <th className="text-right py-2.5 font-semibold">Propostas</th>
-                    <th className="text-right py-2.5 font-semibold">Negócios</th>
+                    <th className="text-right py-2.5 font-semibold">Oportunidades</th>
+                    <th className="text-right py-2.5 font-semibold">Contratos</th>
                     <th className="text-right py-2.5 font-semibold">Conversão</th>
                     <th className="text-center py-2.5 font-semibold">Status</th>
                   </tr>
@@ -251,7 +250,6 @@ export default function DashboardGestor() {
                         {r.nome}
                       </td>
                       <td className="text-right py-3">{r.leads}</td>
-                      <td className="text-right py-3">{r.contatos}</td>
                       <td className="text-right py-3">{r.propostas}</td>
                       <td className="text-right py-3 font-semibold">{r.negocios}</td>
                       <td className="text-right py-3">{r.conversao.toFixed(1)}%</td>
@@ -328,7 +326,9 @@ export default function DashboardGestor() {
               <thead>
                 <tr className="text-xs text-muted border-b border-line">
                   <th className="text-left py-2 font-semibold">Corretor</th>
-                  <th className="text-right py-2 font-semibold">Meta contr.</th>
+                  <th className="text-right py-2 font-semibold">Meta gestor</th>
+                  <th className="text-right py-2 font-semibold">Meta corretor</th>
+                  <th className="text-right py-2 font-semibold">Meta em uso</th>
                   <th className="text-right py-2 font-semibold">Realizado</th>
                   <th className="text-right py-2 font-semibold">% contr.</th>
                   <th className="text-center py-2 font-semibold">Status</th>
@@ -338,7 +338,9 @@ export default function DashboardGestor() {
                 {d.metas.porCorretor.map(m=> (
                   <tr key={m.corretorId} className="border-b border-line/60">
                     <td className="py-2.5 font-medium text-ink">{m.nome}</td>
-                    <td className="text-right py-2.5">{m.metaContratos ?? <span className="text-muted">—</span>}</td>
+                    <td className="text-right py-2.5">{m.metaGestor ?? <span className="text-muted">—</span>}</td>
+                    <td className="text-right py-2.5">{m.metaPropria ?? <span className="text-muted">—</span>}</td>
+                    <td className="text-right py-2.5 font-semibold">{m.metaContratos ?? <span className="text-muted">—</span>}</td>
                     <td className="text-right py-2.5">{m.realizadoContratos}</td>
                     <td className="text-right py-2.5">{m.percentualContratos.toFixed(0)}%</td>
                     <td className="text-center py-2.5">
@@ -458,16 +460,16 @@ export default function DashboardGestor() {
           </div>
         </div>
 
-        {/* Imóveis */}
+        {/* Empreendimentos */}
         <div className="bg-white border border-line rounded-card shadow-card p-6">
-          <h3 className="font-semibold text-ink mb-4 flex items-center gap-2"><Building2 size={18} className="text-primary"/> Imóveis mais procurados (por lead.imovel_id)</h3>
-          {d.imoveisMaisProcurados.length===0 ? <p className="text-sm text-muted py-8 text-center">Nenhum lead vinculado a imóvel no período.</p> : (
+          <h3 className="font-semibold text-ink mb-4 flex items-center gap-2"><Building2 size={18} className="text-primary"/> Empreendimentos mais procurados</h3>
+          {d.empreendimentosMaisProcurados.length===0 ? <p className="text-sm text-muted py-8 text-center">Nenhum lead vinculado a empreendimento no período.</p> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="text-xs text-muted border-b border-line"><th className="text-left py-2">Imóvel</th><th className="text-right py-2">Interessados</th><th className="text-right py-2">Propostas</th><th className="text-right py-2">Negócios</th><th className="text-right py-2">Conversão</th></tr></thead>
+                <thead><tr className="text-xs text-muted border-b border-line"><th className="text-left py-2">Empreendimento</th><th className="text-right py-2">Interessados</th><th className="text-right py-2">Propostas</th><th className="text-right py-2">Negócios</th><th className="text-right py-2">Conversão</th></tr></thead>
                 <tbody>
-                  {d.imoveisMaisProcurados.map(im=>(
-                    <tr key={im.imovelId} className="border-b border-line/60"><td className="py-2.5 font-medium text-ink">{im.titulo}</td><td className="text-right">{im.interessados}</td><td className="text-right">{im.propostas}</td><td className="text-right font-semibold">{im.negocios}</td><td className="text-right">{im.conversao.toFixed(1)}%</td></tr>
+                  {d.empreendimentosMaisProcurados.map(im=>(
+                    <tr key={im.empreendimentoId} className="border-b border-line/60"><td className="py-2.5 font-medium text-ink">{im.nome}</td><td className="text-right">{im.interessados}</td><td className="text-right">{im.propostas}</td><td className="text-right font-semibold">{im.negocios}</td><td className="text-right">{im.conversao.toFixed(1)}%</td></tr>
                   ))}
                 </tbody>
               </table>

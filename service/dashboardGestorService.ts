@@ -22,7 +22,7 @@ export interface DashboardGestorDTO {
     realizadoContratos: number
     percentualContratos: number
     faltanteContratos: number
-    porCorretor: { corretorId: number; nome: string; metaContratos: number|null; realizadoContratos: number; percentualContratos: number; status: string }[]
+    porCorretor: { corretorId: number; nome: string; metaContratos: number|null; metaGestor: number|null; metaPropria: number|null; realizadoContratos: number; percentualContratos: number; status: string }[]
   }
   tempoMedio: {
     mediaGeralDias: number
@@ -31,7 +31,7 @@ export interface DashboardGestorDTO {
   }
   origens: { origem: string; label: string; quantidade: number; percentual: number; conversoes: number; negocios: number; taxaConversao: number }[]
   historico: { periodo: string; recebidos: number; contratos: number; descartes: number }[]
-  imoveisMaisProcurados: { imovelId: number; titulo: string; interessados: number; propostas: number; negocios: number; conversao: number }[]
+  empreendimentosMaisProcurados: { empreendimentoId: number; nome: string; interessados: number; propostas: number; negocios: number; conversao: number }[]
   alertas: { tipo: string; corretorId: number; corretorNome: string; mensagem: string; severidade: string }[]
 }
 
@@ -41,7 +41,7 @@ export interface DashboardFiltros {
   corretorId?: number
   origem?: string
   status?: string
-  imovelId?: number
+  empreendimentoId?: number
 }
 
 export const dashboardGestorService = {
@@ -52,7 +52,7 @@ export const dashboardGestorService = {
     if (filtros.corretorId) params.corretorId = String(filtros.corretorId)
     if (filtros.origem) params.origem = filtros.origem
     if (filtros.status) params.status = filtros.status
-    if (filtros.imovelId) params.imovelId = String(filtros.imovelId)
+    if (filtros.empreendimentoId) params.empreendimentoId = String(filtros.empreendimentoId)
     const res = await api.get("/dashboard/gestor", { params })
     return res.data
   },

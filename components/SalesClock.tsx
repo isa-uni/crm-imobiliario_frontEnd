@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, differenceInDays, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { leadService } from '@/service/leadService';
-import { metaService } from '@/service/metaService';
+import { metaService, MetaDTO } from '@/service/metaService';
 import { authService } from '@/service/authService';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
@@ -41,6 +41,8 @@ export default function SalesClock() {
   const { toast } = useToast();
   const [metaMensal, setMetaMensal] = useState<number>(1);
   const [metaId, setMetaId] = useState<number | null>(null);
+  const [metaPropria, setMetaPropria] = useState<MetaDTO | null>(null);
+  const [metaGestor, setMetaGestor] = useState<MetaDTO | null>(null);
   const [showSetup, setShowSetup] = useState(false); //tela da meta
   const [loadingMeta, setLoadingMeta] = useState(true);
   const [savingMeta, setSavingMeta] = useState(false);
@@ -83,10 +85,14 @@ export default function SalesClock() {
     setLoadingMeta(true);
     try {
       const mesRef = format(startOfMonth(selectedMonth), 'yyyy-MM-dd'); //pega o mês selecionado
-      const meta = await metaService.getMinhaMeta(mesRef); //Busca no backend a meta daquele mês.
-      if (meta) {
-        setMetaMensal(meta.metaContratos);
-        setMetaId(meta.id);
+      const resumo = await metaService.getMinhaMeta(mesRef); //Busca no backend a meta própria e a do gestor daquele mês.
+      setMetaPropria(resumo.metaPropria);
+      setMetaGestor(resumo.metaGestor);
+      // meta própria do corretor tem prioridade; na ausência dela, vale a atribuída pelo gestor
+      const efetiva = resumo.metaEfetiva;
+      if (efetiva) {
+        setMetaMensal(efetiva.metaContratos);
+        setMetaId(efetiva.id);
         setShowSetup(false);
       } else {
         setShowSetup(true); //tela para cadastrar a meta
@@ -159,13 +165,13 @@ export default function SalesClock() {
     setSavingMeta(true);
     try {
       const mesRef = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
-      const saved = await metaService.salvarMeta({
+      await metaService.salvarMeta({
         usuarioId: usuario.id,
         mesReferencia: mesRef,
         metaContratos: contratos,
       });
-      setMetaMensal(saved.metaContratos);
-      setMetaId(saved.id);
+      // recarrega para refletir a meta própria recém-salva junto da meta do gestor (se houver)
+      await loadMeta();
       setShowSetup(false);
     } catch (e: any) {
       const parsed = parseApiError(e);
@@ -350,6 +356,13 @@ export default function SalesClock() {
             </p>
           </div>
 
+          {metaGestor && (
+            <div className="mb-6 bg-[#fdf3e0] p-3 rounded-lg text-sm text-[#8a6110] text-center">
+              Meta atribuída pelo gestor: <span className="font-bold">{metaGestor.metaContratos} contratos</span>.
+              Definindo a sua própria abaixo, ela passa a valer no lugar da meta do gestor.
+            </div>
+          )}
+
           <div className="mb-6">
             <label className="block text-sm font-bold text-muted uppercase mb-2">
               Meta de Contratos
@@ -439,6 +452,22 @@ export default function SalesClock() {
                 <p className="text-sm text-muted">Meta do Mês</p>
                 <p className="text-3xl font-bold text-primary">{metaMensal}</p>
                 <p className="text-xs text-muted">contratos</p>
+                {(metaPropria || metaGestor) && (
+                  <div className="mt-2 pt-2 border-t border-line/60 space-y-0.5">
+                    {metaPropria && (
+                      <p className="text-xs text-muted">
+                        Sua meta: <span className="font-semibold text-ink">{metaPropria.metaContratos}</span>
+                        <span className="ml-1 text-[10px] text-primary font-semibold">(em uso)</span>
+                      </p>
+                    )}
+                    {metaGestor && (
+                      <p className="text-xs text-muted">
+                        Meta do gestor: <span className="font-semibold text-ink">{metaGestor.metaContratos}</span>
+                        {!metaPropria && <span className="ml-1 text-[10px] text-primary font-semibold">(em uso)</span>}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

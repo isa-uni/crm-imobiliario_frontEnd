@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState, ReactNode } from "react"
 import { Search, ArrowUpDown } from "lucide-react"
-import { empreendimentoIaService, UnidadeDTO, UnidadesResumoDTO, DocumentoDTO } from "@/service/empreendimentoIaService"
+import { empreendimentoIaService, UnidadeDTO, UnidadesResumoDTO } from "@/service/empreendimentoIaService"
 import { BadgeSituacao } from "@/components/ui/Badge"
 import { brl, m2, naoInformado } from "@/lib/format"
 
@@ -21,16 +21,9 @@ const COLUNAS: { chave: keyof UnidadeDTO | "acoes"; label: string; ordenavel?: b
   { chave: "subsidioCohapar", label: "Subsídio COHAPAR", render: (u) => u.subsidioCohapar ? brl(u.subsidioCohapar) : "—" },
   { chave: "financiamento", label: "Financiamento", render: (u) => u.financiamento ? brl(u.financiamento) : "—" },
   { chave: "valorAvaliacao", label: "Valor avaliação", render: (u) => u.valorAvaliacao ? brl(u.valorAvaliacao) : "—" },
-  { chave: "observacoes", label: "Observações", render: (u) => u.observacoes || "—" },
 ]
 
-export default function UnidadesTable({ empreendimentoId, resumo, documentos }: { empreendimentoId: number; resumo?: UnidadesResumoDTO; documentos?: DocumentoDTO[] }) {
-  const nomesPorDocumento = new Map((documentos || []).map(d => [d.id, d.nomeOriginal]))
-  const origem = (u: UnidadeDTO) => {
-    const nomeDoc = u.documentoOrigemId ? nomesPorDocumento.get(u.documentoOrigemId) : undefined
-    if (!nomeDoc) return "—"
-    return u.linhaOrigem ? `${nomeDoc} (linha ${u.linhaOrigem})` : nomeDoc
-  }
+export default function UnidadesTable({ empreendimentoId, resumo }: { empreendimentoId: number; resumo?: UnidadesResumoDTO }) {
   const [unidades, setUnidades] = useState<UnidadeDTO[]>([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(0)
@@ -117,14 +110,13 @@ export default function UnidadesTable({ empreendimentoId, resumo, documentos }: 
                   ) : c.label}
                 </th>
               ))}
-              <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Origem</th>
             </tr>
           </thead>
           <tbody>
             {carregando ? (
-              <tr><td colSpan={COLUNAS.length + 1} className="py-8 text-center text-muted">Carregando unidades...</td></tr>
+              <tr><td colSpan={COLUNAS.length} className="py-8 text-center text-muted">Carregando unidades...</td></tr>
             ) : unidades.length === 0 ? (
-              <tr><td colSpan={COLUNAS.length + 1} className="py-8 text-center text-muted">Nenhuma unidade encontrada com esses filtros.</td></tr>
+              <tr><td colSpan={COLUNAS.length} className="py-8 text-center text-muted">Nenhuma unidade encontrada com esses filtros.</td></tr>
             ) : unidades.map(u => (
               <tr key={u.id} className="border-b border-line/60 hover:bg-surface/40">
                 {COLUNAS.map(c => (
@@ -132,7 +124,6 @@ export default function UnidadesTable({ empreendimentoId, resumo, documentos }: 
                     {c.render ? c.render(u) : naoInformado((u as any)[c.chave])}
                   </td>
                 ))}
-                <td className="py-2 px-3 whitespace-nowrap text-xs text-muted">{origem(u)}</td>
               </tr>
             ))}
           </tbody>

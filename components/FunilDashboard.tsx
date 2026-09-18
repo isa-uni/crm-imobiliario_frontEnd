@@ -1,6 +1,6 @@
 "use client";
 
-import { Lead } from "@/types";
+import { Lead, LeadStatus } from "@/types";
 
 interface FunilProps {
   leads: Lead[];
@@ -16,10 +16,20 @@ const ETAPAS = [
   { status: "contrato", label: "Vendas", cor: "bg-[#7a5ca8]" },
 ] as const;
 
+// mesma ordem usada no Relógio de Vendas: um lead com status mais avançado é contado como
+// tendo passado por todas as etapas anteriores, mesmo que tenha pulado etapas no meio do caminho
+const STATUS_ORDER: LeadStatus[] = ETAPAS.map((e) => e.status);
+
 export default function Funil({ leads }: FunilProps) {
   const contagens: Record<string, number> = {};
-  ETAPAS.forEach((etapa) => {
-    contagens[etapa.status] = leads.filter((l) => l.status === etapa.status).length;
+  ETAPAS.forEach((etapa, index) => {
+    if (index === 0) {
+      // topo do funil: todo lead que entrou conta aqui, independente do status atual
+      contagens[etapa.status] = leads.length;
+      return;
+    }
+    const statusValidos = STATUS_ORDER.slice(index);
+    contagens[etapa.status] = leads.filter((l) => statusValidos.includes(l.status)).length;
   });
 
   const rows = ETAPAS.map((etapa, index) => {
@@ -41,9 +51,10 @@ export default function Funil({ leads }: FunilProps) {
         Funil de processos
       </h2>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-1">
         {rows.map((row) => (
-          <div key={row.status} className="flex items-center gap-2 mb-1 w-full max-w-lg">
+          <div key={row.status} className="flex items-center gap-3 w-full max-w-lg" title={row.label}>
+            <span className="w-16 shrink-0 text-xs font-semibold text-ink text-right">{row.label}</span>
             <div className="relative flex-1">
               <div
                 className={`${row.cor} h-6 flex items-center justify-center text-white text-xs font-bold shadow-sm`}
@@ -56,9 +67,9 @@ export default function Funil({ leads }: FunilProps) {
                 {row.quantidade}
               </div>
             </div>
-            {/* <span className="w-16 text-[10px] text-gray-500 bg-gray-200 px-1 py-0.5 text-center whitespace-nowrap">
+            <span className="w-16 shrink-0 text-[10px] text-muted text-left whitespace-nowrap">
               {row.index === 0 ? "Topo" : `Conv: ${row.conversao !== null ? row.conversao : "--"}%`}
-            </span> */}
+            </span>
           </div>
         ))}
       </div>

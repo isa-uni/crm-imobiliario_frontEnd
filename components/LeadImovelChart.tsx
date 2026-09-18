@@ -13,9 +13,9 @@ const TOP_N = 8; //mostrar apenas os 8 primeiros
 export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
   const contagens: Record<string, number> = {};
   leads.forEach((l) => {
-    const chave = l.imovel?.titulo?.trim() || "Sem imóvel";
+    const chave = l.empreendimentoNome?.trim() || "Sem empreendimento";
     contagens[chave] = (contagens[chave] || 0) + 1;
-  }); //conta quantos clientes estão interessados em cada imovel
+  }); //conta quantos clientes estão interessados em cada empreendimento
 
   const data = Object.entries(contagens)
     .map(([nome, valor]) => ({ name: nome, value: valor }))
@@ -37,13 +37,13 @@ export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
           <Building2 size={20} className="text-primary" />
         </span>
         <div>
-          <h2 className="text-lg font-semibold text-ink">Imóveis de Maior Interesse</h2>
+          <h2 className="text-lg font-semibold text-ink">Empreendimentos de Maior Interesse</h2>
           <p className="text-sm text-muted">Top {Math.min(TOP_N, data.length)} por interesse dos leads</p>
         </div>
       </div>
 
       {data.length === 0 ? (
-        <p className="text-sm text-muted py-10 text-center">Nenhum lead vinculado a imóvel.</p>
+        <p className="text-sm text-muted py-10 text-center">Nenhum lead vinculado a empreendimento.</p>
       ) : (
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">

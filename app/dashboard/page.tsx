@@ -12,6 +12,7 @@ import {
   DollarSign,
   ArrowUp,
   ArrowDown,
+  ArrowUpRight,
   CheckCircle
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -143,145 +144,144 @@ export default function Dashboard() {
         ) : (
           <>
         {/* Cards Principais - 4 métricas essenciais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Visão geral do mês</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* Leads Ativos */}
-          <div className="bg-white border border-line rounded-card shadow-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="w-9 h-9 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+            {/* Leads Ativos */}
+            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+              <div className="flex items-center justify-between mb-5">
+                <span className="w-10 h-10 rounded-xl bg-primary-50 text-primary flex items-center justify-center">
                   <Users size={18} />
                 </span>
-                <p className="text-sm text-muted">Leads Ativos</p>
+                {stats.variacaoLeads !== 0 && (
+                  <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${
+                    stats.variacaoLeads > 0 ? 'bg-[#e8f6ee] text-[#0f8a52]' : 'bg-[#fdeceb] text-[#c0392b]'
+                  }`}>
+                    {stats.variacaoLeads > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                    {Math.abs(stats.variacaoLeads).toFixed(0)}%
+                  </div>
+                )}
               </div>
-              {stats.variacaoLeads !== 0 && (
-                <div className={`flex items-center gap-1 text-sm font-medium ${
-                  stats.variacaoLeads > 0 ? 'text-[#0f8a52]' : 'text-[#c0392b]'
-                }`}>
-                  {stats.variacaoLeads > 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-                  {Math.abs(stats.variacaoLeads).toFixed(0)}%
-                </div>
-              )}
+              <p className="text-sm text-muted mb-1">Leads Ativos</p>
+              <p className="text-3xl font-bold text-ink tracking-tight">{stats.leadsAtivos}</p>
+              <p className="text-xs text-muted mt-1.5">{stats.leadsTotal} total este mês</p>
             </div>
-            <p className="text-3xl font-bold text-ink">{stats.leadsAtivos}</p>
-            <p className="text-xs text-muted mt-1.5">{stats.leadsTotal} total este mês</p>
-          </div>
 
-          {/* Fechamentos */}
-          <div className="bg-white border border-line rounded-card shadow-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="w-9 h-9 rounded-lg bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+            {/* Fechamentos */}
+            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+              <div className="flex items-center justify-between mb-5">
+                <span className="w-10 h-10 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
                   <CheckCircle size={18} />
                 </span>
-                <p className="text-sm text-muted">Contratos Fechados</p>
+                {stats.variacaoContratos !== 0 && (
+                  <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${
+                    stats.variacaoContratos > 0 ? 'bg-[#e8f6ee] text-[#0f8a52]' : 'bg-[#fdeceb] text-[#c0392b]'
+                  }`}>
+                    {stats.variacaoContratos > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                    {Math.abs(stats.variacaoContratos).toFixed(0)}%
+                  </div>
+                )}
               </div>
-              {stats.variacaoContratos !== 0 && (
-                <div className={`flex items-center gap-1 text-sm font-medium ${
-                  stats.variacaoContratos > 0 ? 'text-[#0f8a52]' : 'text-[#c0392b]'
-                }`}>
-                  {stats.variacaoContratos > 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-                  {Math.abs(stats.variacaoContratos).toFixed(0)}%
-                </div>
-              )}
+              <p className="text-sm text-muted mb-1">Contratos Fechados</p>
+              <p className="text-3xl font-bold text-ink tracking-tight">{stats.contratos}</p>
+              <p className="text-xs text-muted mt-1.5">este mês</p>
             </div>
-            <p className="text-3xl font-bold text-ink">{stats.contratos}</p>
-            <p className="text-xs text-muted mt-1.5">este mês</p>
-          </div>
 
-          {/* Faturamento */}
-          <div className="bg-white border border-line rounded-card shadow-card p-6">
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="w-9 h-9 rounded-lg bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
-                <DollarSign size={18} />
-              </span>
-              <p className="text-sm text-muted">Valor Contrato</p>
+            {/* Faturamento */}
+            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+              <div className="flex items-center justify-between mb-5">
+                <span className="w-10 h-10 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+                  <DollarSign size={18} />
+                </span>
+              </div>
+              <p className="text-sm text-muted mb-1">Valor Contrato</p>
+              <p className="text-3xl font-bold text-[#0f8a52] tracking-tight">
+                R$ {(stats.valorContrato / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}k
+              </p>
+              <p className="text-xs text-muted mt-1.5">este mês</p>
             </div>
-            <p className="text-3xl font-bold text-[#0f8a52]">
-              R$ {(stats.valorContrato / 1000).toFixed(0)}k
-            </p>
-            <p className="text-xs text-muted mt-1.5">este mês</p>
-          </div>
 
-          {/* Taxa de Conversão */}
-          <div className="bg-white border border-line rounded-card shadow-card p-6">
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="w-9 h-9 rounded-lg bg-accent-50 text-accent-700 flex items-center justify-center">
-                <Target size={18} />
-              </span>
-              <p className="text-sm text-muted">Taxa de Conversão</p>
+            {/* Taxa de Conversão */}
+            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+              <div className="flex items-center justify-between mb-5">
+                <span className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+                  <Target size={18} />
+                </span>
+              </div>
+              <p className="text-sm text-muted mb-1">Taxa de Conversão</p>
+              <p className="text-3xl font-bold text-ink tracking-tight">{stats.taxaConversao.toFixed(0)}%</p>
+              <p className="text-xs text-muted mt-1.5">este mês</p>
             </div>
-            <p className="text-3xl font-bold text-ink">{stats.taxaConversao.toFixed(0)}%</p>
-            <p className="text-xs text-muted mt-1.5">este mês</p>
           </div>
         </div>
 
-        {/* Ações Rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Bento: funil (área principal) + acesso rápido e destaque (coluna lateral) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Funil leads={leads} />
+          </div>
 
-          <Link href="/leads" className="block group">
-            <div className="bg-white border border-line rounded-card shadow-card p-6 hover:shadow-card-lg hover:border-primary-200 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-ink group-hover:text-primary">
-                    Gerenciar Leads
-                  </h3>
-                  <p className="text-sm text-muted mt-1">
-                    Ver todos os {leads.length} leads
-                  </p>
-                </div>
-                <span className="w-12 h-12 rounded-lg bg-surface text-muted flex items-center justify-center group-hover:text-accent-600 transition-colors">
-                  <Users size={28} />
-                </span>
+          <div className="flex flex-col gap-6">
+            {/* Acesso rápido - lista compacta */}
+            <div className="bg-white border border-line rounded-card shadow-card p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Acesso rápido</h2>
+              <div className="flex flex-col divide-y divide-line">
+                <Link href="/leads" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary-50 text-primary flex items-center justify-center">
+                    <Users size={18} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink group-hover:text-primary transition-colors truncate">Gerenciar Leads</p>
+                    <p className="text-xs text-muted truncate">{leads.length} leads</p>
+                  </div>
+                  <ArrowUpRight size={15} className="text-line group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                </Link>
+
+                <Link href="/properties" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+                    <Building2 size={18} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink group-hover:text-primary transition-colors truncate">Imóveis</p>
+                    <p className="text-xs text-muted truncate">{imoveis.filter(i => i.status === 'disponivel').length} disponíveis</p>
+                  </div>
+                  <ArrowUpRight size={15} className="text-line group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                </Link>
               </div>
             </div>
-          </Link>
 
-          <Link href="/relogio-vendas" className="block group">
-            <div className="bg-white border border-line rounded-card shadow-card p-6 hover:shadow-card-lg hover:border-primary-200 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-ink group-hover:text-primary">
-                    Relógio de Vendas
-                  </h3>
-                  <p className="text-sm text-muted mt-1">
-                    Acompanhar metas
-                  </p>
-                </div>
-                <span className="w-12 h-12 rounded-lg bg-surface text-muted flex items-center justify-center group-hover:text-accent-600 transition-colors">
-                  <TrendingUp size={28} />
+            {/* Relógio de Vendas - card de destaque */}
+            <Link href="/relogio-vendas" className="group block flex-1">
+              <div className="h-full bg-primary rounded-card shadow-card p-6 flex flex-col justify-between hover:shadow-card-lg transition-shadow relative overflow-hidden">
+                <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/5" />
+                <div className="absolute -right-2 bottom-8 w-16 h-16 rounded-full bg-accent/10" />
+                <span className="w-11 h-11 rounded-xl bg-white/10 text-accent flex items-center justify-center relative">
+                  <TrendingUp size={20} />
                 </span>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/properties" className="block group">
-            <div className="bg-white border border-line rounded-card shadow-card p-6 hover:shadow-card-lg hover:border-primary-200 transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-ink group-hover:text-primary">
-                    Imóveis
-                  </h3>
-                  <p className="text-sm text-muted mt-1">
-                    {imoveis.filter(i => i.status === 'disponivel').length} disponíveis
-                  </p>
+                <div className="relative">
+                  <h3 className="text-base font-semibold text-white">Relógio de Vendas</h3>
+                  <p className="text-sm text-primary-100/70 mt-0.5">Acompanhar metas do mês</p>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent mt-3 group-hover:gap-1.5 transition-all">
+                    Ver detalhes <ArrowUpRight size={13} />
+                  </span>
                 </div>
-                <span className="w-12 h-12 rounded-lg bg-surface text-muted flex items-center justify-center group-hover:text-accent-600 transition-colors">
-                  <Building2 size={28} />
-                </span>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
         </div>
 
-        <Funil leads={leads} />
-
-        <LeadsContratosTimelineChart />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <LeadOrigemChart leads={leads} />
-          <LeadImovelChart leads={leads} />
+        {/* Bento: evolução de contratos (área principal) + origem dos leads (coluna lateral) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <LeadsContratosTimelineChart />
+          </div>
+          <div>
+            <LeadOrigemChart leads={leads} />
+          </div>
         </div>
+
+        <LeadImovelChart leads={leads} />
           </>
         )}
       </main>

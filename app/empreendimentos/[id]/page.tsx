@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge"
 import { brl, m2, faixa, dataCurta } from "@/lib/format"
 import {
   Building2, MapPin, DollarSign, Layers, Sparkles, FileText, ArrowLeft, Home,
-  CreditCard, Info, TreePine, ExternalLink,
+  Info, TreePine, ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
 import EmpreendimentoUploadModal from "@/components/empreendimento/EmpreendimentoUploadModal"
@@ -19,7 +19,6 @@ const SECOES = [
   { id: "sec-caracteristicas", label: "Características" },
   { id: "sec-localizacao", label: "Localização" },
   { id: "sec-comercial", label: "Comercial" },
-  { id: "sec-pagamento", label: "Pagamento" },
   { id: "sec-diferenciais", label: "Diferenciais" },
   { id: "sec-unidades", label: "Unidades" },
   { id: "sec-documentos", label: "Documentos" },
@@ -67,8 +66,8 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
   const car = emp.caracteristica
   const localizacaoTexto = [emp.endereco, emp.numero].filter(Boolean).join(", ")
   const cidadeUf = [emp.cidade, emp.uf].filter(Boolean).join("/")
-  const enderecoCompleto = [localizacaoTexto, emp.bairro, cidadeUf].filter(Boolean).join(" • ")
-  const temLocalizacao = Boolean(emp.endereco || emp.cidade)
+  const enderecoCompleto = [localizacaoTexto, emp.bairro, emp.regiao, cidadeUf].filter(Boolean).join(" • ")
+  const temLocalizacao = Boolean(emp.endereco || emp.cidade || emp.regiao)
   const semNenhumDado = !car && !resumo && !emp.condicao && (!emp.diferenciais || emp.diferenciais.length === 0) &&
     (!emp.areasComuns || emp.areasComuns.length === 0) && (!emp.documentos || emp.documentos.length === 0)
 
@@ -175,6 +174,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
                 <Campo label="Número" value={emp.numero} />
                 <Campo label="Complemento" value={emp.complemento} />
                 <Campo label="Bairro" value={emp.bairro} />
+                <Campo label="Região" value={emp.regiao} />
                 <Campo label="Cidade" value={emp.cidade} />
                 <Campo label="UF" value={emp.uf} />
                 <Campo label="CEP" value={emp.cep} />
@@ -223,24 +223,6 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           {!resumo && (!emp.precos || emp.precos.length === 0) && <p className="text-sm text-muted">Preço ainda não cadastrado.</p>}
         </Secao>
 
-        <Secao id="sec-pagamento" titulo="Condições de pagamento" icone={<CreditCard size={18} className="text-primary" />}>
-          {emp.condicao ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <Campo label="Entrada" value={emp.condicao.entrada != null ? brl(emp.condicao.entrada) : undefined} />
-              <Campo label="Ato" value={emp.condicao.ato != null ? brl(emp.condicao.ato) : undefined} />
-              <Campo label="Parcelas" value={emp.condicao.parcelas} />
-              <Campo label="Valor da parcela" value={emp.condicao.valorParcela != null ? brl(emp.condicao.valorParcela) : undefined} />
-              <Campo label="Subsídio" value={emp.condicao.subsidio != null ? brl(emp.condicao.subsidio) : undefined} />
-              <Campo label="FGTS" value={emp.condicao.fgts === true ? "Aceito" : emp.condicao.fgts === false ? "Não aceito" : undefined} />
-              <Campo label="Correção" value={emp.condicao.correcao} />
-              <Campo label="Balões" value={emp.condicao.baloes} />
-              {emp.condicao.financiamento && <div className="col-span-2 md:col-span-4"><Campo label="Financiamento" value={emp.condicao.financiamento} /></div>}
-              {emp.condicao.condicoesEspeciais && <div className="col-span-2 md:col-span-4"><Campo label="Condições especiais" value={emp.condicao.condicoesEspeciais} /></div>}
-              {emp.condicao.observacoes && <div className="col-span-2 md:col-span-4"><Campo label="Observações" value={emp.condicao.observacoes} /></div>}
-            </div>
-          ) : <p className="text-sm text-muted">Condições de pagamento ainda não cadastradas. Consulte o setor comercial antes de informar valores ao cliente.</p>}
-        </Secao>
-
         <Secao id="sec-diferenciais" titulo="Diferenciais e lazer" icone={<Sparkles size={18} className="text-primary" />}>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -263,7 +245,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
         </Secao>
 
         <Secao id="sec-unidades" titulo={`Unidades${resumo ? ` (${resumo.total})` : ""}`} icone={<Home size={18} className="text-primary" />}>
-          {resumo ? <UnidadesTable empreendimentoId={id} resumo={resumo} documentos={emp.documentos} /> : <p className="text-sm text-muted">Nenhuma unidade cadastrada ainda — envie uma tabela de preços para importar automaticamente.</p>}
+          {resumo ? <UnidadesTable empreendimentoId={id} resumo={resumo} /> : <p className="text-sm text-muted">Nenhuma unidade cadastrada ainda — envie uma tabela de preços para importar automaticamente.</p>}
         </Secao>
 
         <div id="sec-documentos" className="space-y-6 scroll-mt-20">

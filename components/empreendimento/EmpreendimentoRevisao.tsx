@@ -57,7 +57,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
   const [extracao, setExtracao] = useState<ExtracaoDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState<any>({ nome: "", cidade: "", bairro: "", status: "" })
+  const [form, setForm] = useState<any>({ nome: "", cidade: "", bairro: "", regiao: "", status: "" })
   const [unidades, setUnidades] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -71,10 +71,11 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         const r:any = data.resultado
         setForm({
           nome: r.identificacao?.nome?.valor || "",
-          codigoExterno: r.identificacao?.codigo_externo?.valor || "",
+          codigoExterno: r.identificacao?.codigo_externo?.valor?.trim() || null,
           status: r.identificacao?.status?.valor || "",
           cidade: r.localizacao?.cidade?.valor || "",
           bairro: r.localizacao?.bairro?.valor || "",
+          regiao: r.localizacao?.regiao?.valor || "",
           endereco: r.localizacao?.endereco?.valor || "",
           cep: r.localizacao?.cep?.valor || "",
           uf: r.localizacao?.estado?.valor || "",
@@ -112,10 +113,11 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
       const payload:any = {
         extracaoId,
         nome: form.nome,
-        codigoExterno: form.codigoExterno,
+        codigoExterno: form.codigoExterno?.trim() ? form.codigoExterno.trim() : null,
         status: form.status,
         cidade: form.cidade,
         bairro: form.bairro,
+        regiao: form.regiao,
         endereco: form.endereco,
         cep: form.cep,
         uf: form.uf,
@@ -252,6 +254,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                       const campoSimples = c.campo.split(".").pop() || c.campo
                       if (campoSimples.includes("nome")) setForm((f:any)=>({...f, nome: val}))
                       if (campoSimples.includes("cidade")) setForm((f:any)=>({...f, cidade: val}))
+                      if (campoSimples.includes("regiao")) setForm((f:any)=>({...f, regiao: val}))
                       toast(`Valor ${val} aplicado em ${campoSimples}`, "success")
                     }}/>
                   ))}
@@ -281,6 +284,10 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
           <div>
             <label className="text-xs font-semibold text-muted">Bairro</label>
             <input value={form.bairro} onChange={e=>setForm({...form,bairro:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1"/>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted">Região</label>
+            <input value={form.regiao || ""} onChange={e=>setForm({...form,regiao:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1" placeholder="Zona Norte"/>
           </div>
           <div>
             <label className="text-xs font-semibold text-muted">UF</label>
