@@ -304,13 +304,13 @@ export default function SalesClock() {
   ];
 
   const metricColor = {
-    primary: { bar: 'bg-primary', text: 'text-primary' },
-    indigo: { bar: 'bg-[#5258a8]', text: 'text-[#5258a8]' },
-    teal: { bar: 'bg-[#3fb3b3]', text: 'text-[#2a9d9d]' },
-    green: { bar: 'bg-[#4a9c76]', text: 'text-[#357a5b]' },
-    orange: { bar: 'bg-[#e8914a]', text: 'text-[#c8722f]' },
-    cyan: { bar: 'bg-[#3fb3b3]', text: 'text-[#2a9d9d]' },
-    purple: { bar: 'bg-[#7a5ca8]', text: 'text-[#6a4c98]' },
+    primary: { bar: 'bg-brand', text: 'text-brand-fg' },
+    indigo: { bar: 'bg-cat-indigo', text: 'text-cat-indigo' },
+    teal: { bar: 'bg-chart-6', text: 'text-cat-teal' },
+    green: { bar: 'bg-chart-5', text: 'text-cat-green' },
+    orange: { bar: 'bg-chart-4', text: 'text-cat-orange' },
+    cyan: { bar: 'bg-chart-6', text: 'text-cat-teal' },
+    purple: { bar: 'bg-chart-7', text: 'text-cat-purple' },
   } as const;
 
   //relatorio para o whatsApp
@@ -339,11 +339,11 @@ export default function SalesClock() {
 
   if (showSetup) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary via-primary-800 to-primary-700 p-8 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border-t-8 border-accent">
+      <div className="min-h-screen bg-surface p-8 flex items-center justify-center">
+        <div className="bg-card rounded-2xl shadow-card-lg border border-line p-8 max-w-md w-full border-t-8 border-t-accent">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Award size={32} className="text-accent-700" />
+            <div className="w-16 h-16 bg-accent-soft rounded-full flex items-center justify-center mx-auto mb-4">
+              <Award size={32} className="text-accent-hover" />
             </div>
             <h2 className="text-3xl font-bold text-ink mb-2">
               Novo Mês, Nova Meta!
@@ -357,7 +357,7 @@ export default function SalesClock() {
           </div>
 
           {metaGestor && (
-            <div className="mb-6 bg-[#fdf3e0] p-3 rounded-lg text-sm text-[#8a6110] text-center">
+            <div className="mb-6 bg-warning-bg p-3 rounded-lg text-sm text-warning text-center">
               Meta atribuída pelo gestor: <span className="font-bold">{metaGestor.metaContratos} contratos</span>.
               Definindo a sua própria abaixo, ela passa a valer no lugar da meta do gestor.
             </div>
@@ -371,12 +371,12 @@ export default function SalesClock() {
               type="number"
               value={metaMensal}
               onChange={(e) => setMetaMensal(Number(e.target.value))}
-              className="w-full text-4xl font-bold p-4 border-2 border-line rounded-xl focus:border-accent focus:outline-none text-center text-primary"
+              className="w-full text-4xl font-bold p-4 border-2 border-line rounded-xl focus:border-accent focus:outline-none text-center text-brand-fg"
               min="1"
             />
           </div>
 
-          <div className="bg-[#eaf1f8] p-4 rounded-lg text-sm text-[#274b6b] mb-6">
+          <div className="bg-info-bg p-4 rounded-lg text-sm text-info mb-6">
             <p className="font-bold mb-2">
               <AlertCircle size={16} className="inline mr-2" />
               Métrica de Conversão:
@@ -394,7 +394,7 @@ export default function SalesClock() {
           <button
             onClick={() => saveMeta(metaMensal)}
             disabled={savingMeta}
-            className="w-full bg-primary hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50"
+            className="w-full bg-brand hover:bg-brand-hover text-on-brand font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50"
           >
             {savingMeta ? 'Salvando...' : 'Iniciar Mês'}
           </button>
@@ -407,16 +407,16 @@ export default function SalesClock() {
     <div className="min-h-screen bg-surface p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-primary text-white p-6 rounded-card shadow-lg mb-6">
+        <div className="bg-sidebar text-white p-6 rounded-card shadow-card-lg mb-6">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <span className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-primary">
+                <span className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-on-accent">
                   <Clock size={24} />
                 </span>
                 Relógio de Vendas
               </h1>
-              <p className="text-primary-100/80 text-sm mt-1">
+              <p className="text-sidebar-fg/80 text-sm mt-1">
                 {format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}
               </p>
             </div>
@@ -424,10 +424,10 @@ export default function SalesClock() {
               <div className="text-3xl font-bold text-accent">
                 {diasNoMes - diasPassados}
               </div>
-              <div className="text-sm text-primary-100/70">dias restantes</div>
+              <div className="text-sm text-sidebar-fg/70">dias restantes</div>
               <button
                 onClick={() => setShowSetup(true)}
-                className="mt-2 text-xs text-red-400 hover:text-white underline"
+                className="mt-2 text-xs text-sidebar-fg/80 hover:text-white underline"
               >
                 Redefinir Meta
               </button>
@@ -443,27 +443,27 @@ export default function SalesClock() {
 
         {/* Resumo Principal */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-card p-6 shadow-card">
+          <div className="bg-card rounded-card p-6 shadow-card">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#eaf1f8] rounded-full flex items-center justify-center">
-                <Target size={24} className="text-primary" />
+              <div className="w-12 h-12 bg-info-bg rounded-full flex items-center justify-center">
+                <Target size={24} className="text-brand-fg" />
               </div>
               <div>
                 <p className="text-sm text-muted">Meta do Mês</p>
-                <p className="text-3xl font-bold text-primary">{metaMensal}</p>
+                <p className="text-3xl font-bold text-brand-fg">{metaMensal}</p>
                 <p className="text-xs text-muted">contratos</p>
                 {(metaPropria || metaGestor) && (
                   <div className="mt-2 pt-2 border-t border-line/60 space-y-0.5">
                     {metaPropria && (
                       <p className="text-xs text-muted">
                         Sua meta: <span className="font-semibold text-ink">{metaPropria.metaContratos}</span>
-                        <span className="ml-1 text-[10px] text-primary font-semibold">(em uso)</span>
+                        <span className="ml-1 text-[10px] text-brand-fg font-semibold">(em uso)</span>
                       </p>
                     )}
                     {metaGestor && (
                       <p className="text-xs text-muted">
                         Meta do gestor: <span className="font-semibold text-ink">{metaGestor.metaContratos}</span>
-                        {!metaPropria && <span className="ml-1 text-[10px] text-primary font-semibold">(em uso)</span>}
+                        {!metaPropria && <span className="ml-1 text-[10px] text-brand-fg font-semibold">(em uso)</span>}
                       </p>
                     )}
                   </div>
@@ -472,14 +472,14 @@ export default function SalesClock() {
             </div>
           </div>
 
-          <div className="bg-white rounded-card p-6 shadow-card">
+          <div className="bg-card rounded-card p-6 shadow-card">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#e8f6ee] rounded-full flex items-center justify-center">
-                <Award size={24} className="text-[#0f8a52]" />
+              <div className="w-12 h-12 bg-success-bg rounded-full flex items-center justify-center">
+                <Award size={24} className="text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted">Realizado</p>
-                <p className="text-3xl font-bold text-[#0f8a52]">{metricsDoMes.contratos}</p>
+                <p className="text-3xl font-bold text-success">{metricsDoMes.contratos}</p>
                 <p className="text-xs text-muted">
                   {((metricsDoMes.contratos / metaMensal) * 100).toFixed(0)}% da meta
                 </p>
@@ -487,14 +487,14 @@ export default function SalesClock() {
             </div>
           </div>
 
-          <div className="bg-white rounded-card p-6 shadow-card">
+          <div className="bg-card rounded-card p-6 shadow-card">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center">
-                <Calendar size={24} className="text-accent-700" />
+              <div className="w-12 h-12 bg-accent-soft rounded-full flex items-center justify-center">
+                <Calendar size={24} className="text-accent-hover" />
               </div>
               <div>
                 <p className="text-sm text-muted">Progresso Tempo</p>
-                <p className="text-3xl font-bold text-accent-700">
+                <p className="text-3xl font-bold text-accent-hover">
                   {progressoEsperado.toFixed(0)}%
                 </p>
                 <p className="text-xs text-muted">
@@ -506,7 +506,7 @@ export default function SalesClock() {
         </div>
 
         {/* Métricas Detalhadas */}
-        <div className="bg-white rounded-card p-6 shadow-card mb-6">
+        <div className="bg-card rounded-card p-6 shadow-card mb-6">
           <h3 className="text-lg font-bold text-ink mb-4">
             Funil de Vendas - Atualização Automática
           </h3>
@@ -521,13 +521,13 @@ export default function SalesClock() {
               const status = getStatus(metric.realizado, metric.meta);
               const colors = metricColor[metric.color as keyof typeof metricColor];
               
-              let statusColor = 'bg-[#fdf3e0] text-[#b8790a]';
+              let statusColor = 'bg-warning-bg text-warning';
               let statusText = 'No Prazo';
               if (status === 'adiantado') {
-                statusColor = 'bg-[#e8f6ee] text-[#0f8a52]';
+                statusColor = 'bg-success-bg text-success';
                 statusText = 'Adiantado';
               } else if (status === 'atrasado') {
-                statusColor = 'bg-[#fdeceb] text-[#c0392b]';
+                statusColor = 'bg-danger-bg text-danger';
                 statusText = 'Atrasado';
               }
 
@@ -547,7 +547,7 @@ export default function SalesClock() {
                       </span>
                     </div>
                   </div>
-                  <div className="relative w-full bg-[#eef2f7] rounded-full h-3">
+                  <div className="relative w-full bg-subtle rounded-full h-3">
                     {/* Linha de progresso esperado */}
                     <div 
                       className="absolute top-0 bottom-0 w-0.5 bg-muted z-10"
@@ -578,6 +578,7 @@ export default function SalesClock() {
 
         {/* Ações */}
         <div className="flex gap-4">
+          {/* Verde oficial do WhatsApp: exceção aos tokens de tema */}
           <button
             onClick={gerarRelatorio}
             className="flex-1 bg-[#1fa855] hover:bg-[#178a45] text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
@@ -587,7 +588,7 @@ export default function SalesClock() {
           </button>
           <button //É executado ao clicar em "Atualizar Dados"
             onClick={loadData}
-            className="px-6 bg-white hover:bg-surface text-ink font-bold py-4 rounded-xl shadow-card border border-line transition-all"
+            className="px-6 bg-card hover:bg-surface text-ink font-bold py-4 rounded-xl shadow-card border border-line transition-all"
           >
             Atualizar Dados
           </button>

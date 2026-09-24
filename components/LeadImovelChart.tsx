@@ -3,6 +3,7 @@
 import { Lead } from "@/types";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Building2 } from "lucide-react";
+import { useThemeColors, chartTooltipStyle } from "@/hooks/useThemeColors";
 
 interface LeadImovelChartProps {
   leads: Lead[]; //recebendo os leads
@@ -11,6 +12,7 @@ interface LeadImovelChartProps {
 const TOP_N = 8; //mostrar apenas os 8 primeiros
 
 export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
+  const cores = useThemeColors();
   const contagens: Record<string, number> = {};
   leads.forEach((l) => {
     const chave = l.empreendimentoNome?.trim() || "Sem empreendimento";
@@ -31,10 +33,10 @@ export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
   const total = leads.length; //total leads
 
   return (
-    <div className="w-full bg-white border border-line rounded-card shadow-card p-6">
+    <div className="w-full bg-card border border-line rounded-card shadow-card p-6">
       <div className="flex items-center gap-3 mb-4">
-        <span className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-          <Building2 size={20} className="text-primary" />
+        <span className="w-10 h-10 rounded-lg bg-brand-soft flex items-center justify-center">
+          <Building2 size={20} className="text-brand-fg" />
         </span>
         <div>
           <h2 className="text-lg font-semibold text-ink">Empreendimentos de Maior Interesse</h2>
@@ -54,13 +56,13 @@ export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
               //eixo x, quantidade de leads
               //eixo y, nome do imovel
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
-              <XAxis type="number" allowDecimals={false} stroke="#8698aa" fontSize={12} /> 
+              <CartesianGrid strokeDasharray="3 3" stroke={cores.line} horizontal={false} />
+              <XAxis type="number" allowDecimals={false} stroke={cores.muted} fontSize={12} /> 
               <YAxis
                 type="category"
                 dataKey="name"
                 width={130}
-                stroke="#8698aa"
+                stroke={cores.muted}
                 fontSize={12}
                 tickFormatter={(v: string) => (v.length > 18 ? `${v.slice(0, 17)}…` : v)}
               />
@@ -73,16 +75,11 @@ export default function LeadImovelChart({ leads }: LeadImovelChartProps) {
                     "Interesse",
                   ];
                 }}
-                cursor={{ fill: "rgba(15,39,64,0.05)" }}
-                contentStyle={{
-                  borderRadius: 10,
-                  border: "1px solid #e1e8f0",
-                  boxShadow: "0 4px 12px rgba(15,39,64,0.08)",
-                  fontSize: 13,
-                }}
+                cursor={{ fill: cores.subtle }}
+                {...chartTooltipStyle(cores)}
               />
               <Bar //value determina o tamanho da barra
-                dataKey="value" fill="#f2a900" radius={[0, 6, 6, 0]} barSize={18} 
+                dataKey="value" fill={cores.accent} radius={[0, 6, 6, 0]} barSize={18} 
               />
             </BarChart>
           </ResponsiveContainer>

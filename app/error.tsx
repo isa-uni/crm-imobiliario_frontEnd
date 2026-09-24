@@ -17,8 +17,8 @@ export default function GlobalError({
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-8">
-      <div className="bg-white border border-line rounded-card shadow-card-lg p-8 max-w-lg w-full text-center">
-        <div className="mx-auto w-16 h-16 rounded-full bg-[#fdeceb] text-[#c0392b] flex items-center justify-center mb-4">
+      <div className="bg-card border border-line rounded-card shadow-card-lg p-8 max-w-lg w-full text-center">
+        <div className="mx-auto w-16 h-16 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
           <AlertTriangle size={32} />
         </div>
         <h2 className="text-2xl font-bold text-ink">Ops, algo deu errado</h2>
@@ -33,13 +33,13 @@ export default function GlobalError({
         <div className="mt-6 flex gap-3 justify-center">
           <button
             onClick={() => reset()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover"
           >
             <RefreshCw size={16} /> Tentar novamente
           </button>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-line text-ink rounded-btn font-semibold hover:bg-surface"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-card border border-line text-ink rounded-btn font-semibold hover:bg-surface"
           >
             <Home size={16} /> Dashboard
           </Link>

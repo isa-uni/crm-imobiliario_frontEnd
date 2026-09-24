@@ -26,7 +26,7 @@ const SECOES = [
 
 function Secao({ id, titulo, icone, children }: { id: string; titulo: string; icone?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section id={id} className="bg-white border border-line rounded-card p-6 scroll-mt-20">
+    <section id={id} className="bg-card border border-line rounded-card p-6 scroll-mt-20">
       <h2 className="font-semibold text-ink flex items-center gap-2 mb-4">{icone}{titulo}</h2>
       {children}
     </section>
@@ -81,9 +81,9 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
         <Link href="/empreendimentos" className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink"><ArrowLeft size={16} /> Voltar</Link>
 
         {/* Hero */}
-        <div className="bg-white border border-line rounded-card shadow-card overflow-hidden">
-          <div className="h-40 md:h-52 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center relative">
-            {emp.imagemUrl ? <img src={emp.imagemUrl} alt={emp.nome} className="w-full h-full object-cover" /> : <Building2 size={48} className="text-primary" />}
+        <div className="bg-card border border-line rounded-card shadow-card overflow-hidden">
+          <div className="h-40 md:h-52 bg-gradient-to-br from-brand-soft to-subtle flex items-center justify-center relative">
+            {emp.imagemUrl ? <img src={emp.imagemUrl} alt={emp.nome} className="w-full h-full object-cover" /> : <Building2 size={48} className="text-brand-fg" />}
           </div>
           <div className="p-6">
             <div className="flex flex-wrap gap-2 mb-2">
@@ -95,7 +95,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
             {emp.descricaoCurta && <p className="text-sm text-muted mt-3">{emp.descricaoCurta}</p>}
             {emp.descricaoCompleta && <p className="text-sm text-ink mt-2 whitespace-pre-wrap">{emp.descricaoCompleta}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setShowUpload(true)} className="px-4 py-2 bg-primary text-white rounded-btn text-sm font-semibold hover:bg-primary-700">Adicionar documentos</button>
+              <button onClick={() => setShowUpload(true)} className="px-4 py-2 bg-brand text-on-brand rounded-btn text-sm font-semibold hover:bg-brand-hover">Adicionar documentos</button>
             </div>
           </div>
 
@@ -103,7 +103,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line border-t border-line">
             <div className="p-4 text-center">
               <div className="text-xs text-muted">A partir de</div>
-              <div className="font-bold text-[#0f8a52]">{resumo?.precoMin ? brl(resumo.precoMin) : emp.precoAtual?.valorMin ? brl(emp.precoAtual.valorMin) : "—"}</div>
+              <div className="font-bold text-success">{resumo?.precoMin ? brl(resumo.precoMin) : emp.precoAtual?.valorMin ? brl(emp.precoAtual.valorMin) : "—"}</div>
             </div>
             <div className="p-4 text-center">
               <div className="text-xs text-muted">Metragem</div>
@@ -123,19 +123,19 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
         {/* Navegação por seções */}
         <nav className="flex flex-wrap gap-2 sticky top-2 z-10">
           {SECOES.map(s => (
-            <a key={s.id} href={`#${s.id}`} className="px-3 py-1.5 bg-white border border-line rounded-full text-xs font-semibold text-muted hover:text-primary hover:border-primary-200 shadow-card">
+            <a key={s.id} href={`#${s.id}`} className="px-3 py-1.5 bg-card border border-line rounded-full text-xs font-semibold text-muted hover:text-brand-fg hover:border-focus shadow-card">
               {s.label}
             </a>
           ))}
         </nav>
 
         {semNenhumDado && (
-          <div className="bg-amber-50 border border-amber-200 rounded-card p-4 text-sm text-amber-800">
+          <div className="bg-warning-bg border border-warning-border rounded-card p-4 text-sm text-warning">
             Nenhum dado foi extraído dos documentos ainda. Envie um documento (tabela de preços, memorial ou book) para começar a preencher esta ficha automaticamente.
           </div>
         )}
 
-        <Secao id="sec-identificacao" titulo="Identificação" icone={<Info size={18} className="text-primary" />}>
+        <Secao id="sec-identificacao" titulo="Identificação" icone={<Info size={18} className="text-brand-fg" />}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <Campo label="Nome" value={emp.nome} />
             <Campo label="Status" value={emp.status} />
@@ -144,7 +144,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           </div>
         </Secao>
 
-        <Secao id="sec-caracteristicas" titulo="Características gerais" icone={<Layers size={18} className="text-primary" />}>
+        <Secao id="sec-caracteristicas" titulo="Características gerais" icone={<Layers size={18} className="text-brand-fg" />}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
             <Campo label="Metragem" value={faixa(car?.metragemMin ?? resumo?.metragemMin, car?.metragemMax ?? resumo?.metragemMax, (v) => m2(v))} />
             <Campo label="Quartos" value={faixa(car?.quartosMin, car?.quartosMax)} />
@@ -166,7 +166,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           )}
         </Secao>
 
-        <Secao id="sec-localizacao" titulo="Localização" icone={<MapPin size={18} className="text-primary" />}>
+        <Secao id="sec-localizacao" titulo="Localização" icone={<MapPin size={18} className="text-brand-fg" />}>
           {temLocalizacao ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
@@ -192,7 +192,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
                 </div>
               )}
               {googleMapsHref && (
-                <a href={googleMapsHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline">
+                <a href={googleMapsHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-brand-fg font-semibold hover:underline">
                   Abrir no Google Maps <ExternalLink size={14} />
                 </a>
               )}
@@ -200,7 +200,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           ) : <p className="text-sm text-muted">Endereço ainda não informado nos documentos.</p>}
         </Secao>
 
-        <Secao id="sec-comercial" titulo="Informações comerciais" icone={<DollarSign size={18} className="text-primary" />}>
+        <Secao id="sec-comercial" titulo="Informações comerciais" icone={<DollarSign size={18} className="text-brand-fg" />}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
             <Campo label="Faixa de preço" value={faixa(resumo?.precoMin ?? emp.precoAtual?.valorMin, resumo?.precoMax ?? emp.precoAtual?.valorMax, (v) => brl(v))} />
             <Campo label="Ato" value={resumo ? faixa(resumo.atoMin, resumo.atoMax, (v) => brl(v)) : undefined} />
@@ -214,7 +214,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
                 {emp.precos.map((p, i) => (
                   <div key={p.id ?? i} className="flex justify-between text-sm border-b border-line/60 py-1.5">
                     <span className="text-muted">{p.tipo || "venda"} • {p.dataReferencia || "—"}</span>
-                    <span className="font-semibold text-[#0f8a52]">{faixa(p.valorMin, p.valorMax, (v) => brl(v))}</span>
+                    <span className="font-semibold text-success">{faixa(p.valorMin, p.valorMax, (v) => brl(v))}</span>
                   </div>
                 ))}
               </div>
@@ -223,7 +223,7 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           {!resumo && (!emp.precos || emp.precos.length === 0) && <p className="text-sm text-muted">Preço ainda não cadastrado.</p>}
         </Secao>
 
-        <Secao id="sec-diferenciais" titulo="Diferenciais e lazer" icone={<Sparkles size={18} className="text-primary" />}>
+        <Secao id="sec-diferenciais" titulo="Diferenciais e lazer" icone={<Sparkles size={18} className="text-brand-fg" />}>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <div className="text-xs text-muted mb-2 flex items-center gap-1"><TreePine size={13} /> Áreas comuns / lazer</div>
@@ -244,12 +244,12 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
           </div>
         </Secao>
 
-        <Secao id="sec-unidades" titulo={`Unidades${resumo ? ` (${resumo.total})` : ""}`} icone={<Home size={18} className="text-primary" />}>
+        <Secao id="sec-unidades" titulo={`Unidades${resumo ? ` (${resumo.total})` : ""}`} icone={<Home size={18} className="text-brand-fg" />}>
           {resumo ? <UnidadesTable empreendimentoId={id} resumo={resumo} /> : <p className="text-sm text-muted">Nenhuma unidade cadastrada ainda — envie uma tabela de preços para importar automaticamente.</p>}
         </Secao>
 
         <div id="sec-documentos" className="space-y-6 scroll-mt-20">
-          <Secao id="sec-documentos-lista" titulo="Documentos de origem" icone={<FileText size={18} className="text-primary" />}>
+          <Secao id="sec-documentos-lista" titulo="Documentos de origem" icone={<FileText size={18} className="text-brand-fg" />}>
             {emp.documentos && emp.documentos.length > 0 ? (
               <div className="space-y-2">
                 {emp.documentos.map(d => (

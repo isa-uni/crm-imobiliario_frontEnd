@@ -59,14 +59,14 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
   };
 
   const statusColors = {
-    'lead': 'bg-[#eef2f7] text-[#5f7488]',
-    'oportunidade': 'bg-[#eaf1f8] text-[#27506f]',
-    'visita-agendada': 'bg-[#fdf3e0] text-[#b8790a]',
-    'visita-realizada': 'bg-[#eef1fd] text-[#5258a8]',
-    'pasta': 'bg-[#fdf1ec] text-[#c05621]',
-    'aprovado': 'bg-[#e8f6ee] text-[#0f8a52]',
-    'contrato': 'bg-[#e8f6ee] text-[#0f7a45]',
-    'descarte': 'bg-[#fdeceb] text-[#c0392b]',
+    'lead': 'bg-subtle text-muted',
+    'oportunidade': 'bg-info-bg text-brand-fg',
+    'visita-agendada': 'bg-warning-bg text-warning',
+    'visita-realizada': 'bg-cat-indigo/10 text-cat-indigo',
+    'pasta': 'bg-cat-orange/10 text-cat-orange',
+    'aprovado': 'bg-success-bg text-success',
+    'contrato': 'bg-success-bg text-success',
+    'descarte': 'bg-danger-bg text-danger',
   };
 
   const formatarTelefone = (telefone: string) => {
@@ -86,10 +86,10 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg">
+    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg">
         {/* Header */}
-        <div className="flex justify-between items-start p-6 border-b border-line sticky top-0 bg-white z-10">
+        <div className="flex justify-between items-start p-6 border-b border-line sticky top-0 bg-card z-10">
           <div className="flex-1">
             <h2 className="text-xl font-bold text-ink">{lead.nome}</h2>
             <span className={`inline-block px-3 py-1 text-xs font-bold mt-2 rounded-full ${statusColors[lead.status]}`}>
@@ -113,15 +113,15 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-[#eaf1f8] rounded-lg">
-                  <Phone size={20} className="text-primary" />
+                <div className="p-2 bg-info-bg rounded-lg">
+                  <Phone size={20} className="text-brand-fg" />
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Telefone</p>
                   <p className="text-sm font-medium text-ink">{formatarTelefone(lead.telefone)}</p>
                   <a 
                     href={`tel:${formatarTelefone(lead.telefone)}`} 
-                    className="text-xs text-primary hover:text-primary-700 mt-1 inline-block"
+                    className="text-xs text-brand-fg hover:text-brand-hover mt-1 inline-block"
                   >
                     Ligar agora
                   </a>
@@ -129,15 +129,15 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-[#f3eefb] rounded-lg">
-                  <Mail size={20} className="text-[#7a5ca8]" />
+                <div className="p-2 bg-cat-purple/10 rounded-lg">
+                  <Mail size={20} className="text-cat-purple" />
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Email</p>
                   <p className="text-sm font-medium text-ink break-all">{lead.email}</p>
                   <a 
                     href={`mailto:${lead.email}`} 
-                    className="text-xs text-[#7a5ca8] hover:text-[#6a4c98] mt-1 inline-block"
+                    className="text-xs text-cat-purple hover:text-cat-purple mt-1 inline-block"
                   >
                     Enviar email
                   </a>
@@ -153,20 +153,20 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-[#e8f6ee] rounded-lg">
-                  <DollarSign size={20} className="text-[#0f8a52]" />
+                <div className="p-2 bg-success-bg rounded-lg">
+                  <DollarSign size={20} className="text-success" />
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Valor de Interesse</p>
-                  <p className="text-lg font-bold text-[#0f8a52]">
+                  <p className="text-lg font-bold text-success">
                     R$ {lead.valorInteresse.toLocaleString('pt-BR')}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-[#fdf1ec] rounded-lg">
-                  <Building2 size={20} className="text-[#c05621]" />
+                <div className="p-2 bg-cat-orange/10 rounded-lg">
+                  <Building2 size={20} className="text-cat-orange" />
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Empreendimento de Interesse</p>
@@ -183,8 +183,8 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-[#eef1fd] rounded-lg">
-                  <MapPin size={20} className="text-[#5258a8]" />
+                <div className="p-2 bg-cat-indigo/10 rounded-lg">
+                  <MapPin size={20} className="text-cat-indigo" />
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Origem do Lead</p>
@@ -216,8 +216,8 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
                 Observações
               </h3>
               <div className="flex gap-3">
-                <div className="p-2 bg-[#fdf3e0] rounded-lg h-fit">
-                  <FileText size={20} className="text-[#b8790a]" />
+                <div className="p-2 bg-warning-bg rounded-lg h-fit">
+                  <FileText size={20} className="text-warning" />
                 </div>
                 <div className="flex-1 p-4 bg-surface rounded-btn border border-line">
                   <p className="text-sm text-ink whitespace-pre-wrap">
@@ -269,13 +269,13 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
         <div className="flex gap-3 p-6 border-t border-line bg-surface">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-white transition-colors"
+            className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-card transition-colors"
           >
             Fechar
           </button>
           <button
             onClick={onEdit}
-            className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
           >
             Editar Lead
           </button>

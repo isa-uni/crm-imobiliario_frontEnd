@@ -189,9 +189,9 @@ export default function PropertiesPage() {
   };
 
   const statusConfig = {
-    disponivel: { label: 'Disponível', color: 'bg-[#e8f6ee] text-[#0f8a52]', icon: CheckCircle },
-    // reservado: { label: 'Reservado', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    vendido: { label: 'Vendido', color: 'bg-[#eef2f7] text-[#5f7488]', icon: XCircle },
+    disponivel: { label: 'Disponível', color: 'bg-success-bg text-success', icon: CheckCircle },
+    // reservado: { label: 'Reservado', color: 'bg-warning-bg text-warning', icon: Clock },
+    vendido: { label: 'Vendido', color: 'bg-subtle text-muted', icon: XCircle },
   };
 
   // <form onSubmit={(e) => {
@@ -206,7 +206,7 @@ export default function PropertiesPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <span className="w-12 h-12 rounded-xl bg-accent text-primary flex items-center justify-center shadow-btn">
+              <span className="w-12 h-12 rounded-xl bg-accent text-on-accent flex items-center justify-center shadow-btn">
                 <Building2 size={24} />
               </span>
               <div>
@@ -216,7 +216,7 @@ export default function PropertiesPage() {
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
+              className="flex items-center gap-2 bg-brand text-on-brand px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
             >
               <Plus size={20} />
               Novo Imóvel
@@ -225,17 +225,17 @@ export default function PropertiesPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Total</p>
               <p className="text-3xl font-bold text-ink">{imoveis.length}</p>
             </div>
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Disponíveis</p>
-              <p className="text-3xl font-bold text-[#0f8a52]">
+              <p className="text-3xl font-bold text-success">
                 {imoveis.filter(i => i.status === 'disponivel').length}
               </p>
             </div>
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Vendidos</p>
               <p className="text-3xl font-bold text-muted">
                 {imoveis.filter(i => i.status === 'vendido').length}
@@ -252,8 +252,8 @@ export default function PropertiesPage() {
                   onClick={() => setStatusFilter(status as any)}
                   className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
                     statusFilter === status
-                      ? 'bg-primary text-white shadow-btn'
-                      : 'bg-white text-muted hover:bg-white border border-line'
+                      ? 'bg-brand text-on-brand shadow-btn'
+                      : 'bg-card text-muted hover:bg-card border border-line'
                   }`}
                 >
                   {status === 'all' ? 'Todos' : statusConfig[status as keyof typeof statusConfig].label}
@@ -265,7 +265,7 @@ export default function PropertiesPage() {
 
         {/* Grid de Imóveis */}
         {loading ? (
-          <div className="bg-white border border-line rounded-card shadow-card p-12 text-center">
+          <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
             <p className="text-muted animate-pulse">Carregando imóveis...</p>
           </div>
         ) : loadError ? (
@@ -276,10 +276,10 @@ export default function PropertiesPage() {
               {filteredImoveis.map(imovel => {
                 const StatusIcon = statusConfig[imovel.status].icon;
                 return (
-                  <div key={imovel.id} className="bg-white border border-line rounded-card shadow-card overflow-hidden hover:shadow-card-lg hover:border-primary-200 transition-all">
-                    <div className="h-40 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center border-b border-line">
-                      <span className="w-14 h-14 rounded-xl bg-white shadow-card flex items-center justify-center">
-                        <Building2 size={32} className="text-primary" />
+                  <div key={imovel.id} className="bg-card border border-line rounded-card shadow-card overflow-hidden hover:shadow-card-lg hover:border-focus transition-all">
+                    <div className="h-40 bg-gradient-to-br from-brand-soft to-subtle flex items-center justify-center border-b border-line">
+                      <span className="w-14 h-14 rounded-xl bg-card shadow-card flex items-center justify-center">
+                        <Building2 size={32} className="text-brand-fg" />
                       </span>
                     </div>
                     
@@ -317,7 +317,7 @@ export default function PropertiesPage() {
                       </div>
 
                       <div className="border-t border-dashed pt-3 mb-4">
-                        <div className="flex items-center gap-2 text-[#0f8a52] font-bold text-xl">
+                        <div className="flex items-center gap-2 text-success font-bold text-xl">
                           <DollarSign size={20} />
                           R$ {imovel.valorVenda.toLocaleString('pt-BR')}
                         </div>
@@ -326,14 +326,14 @@ export default function PropertiesPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(imovel)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary hover:bg-primary-100 rounded-btn text-sm font-semibold transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-brand-soft text-brand-fg hover:bg-brand-soft rounded-btn text-sm font-semibold transition-colors"
                         >
                           <Edit size={16} />
                           Editar
                         </button>
                         <button
                           onClick={() => handleDelete(imovel.id)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#fdeceb] text-[#c0392b] hover:bg-[#f7d9d7] rounded-btn text-sm font-semibold transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-danger-bg text-danger hover:bg-danger-bg rounded-btn text-sm font-semibold transition-colors"
                         >
                           <Trash2 size={16} />
                           Excluir
@@ -346,7 +346,7 @@ export default function PropertiesPage() {
             </div>
 
             {filteredImoveis.length === 0 && (
-              <div className="text-center py-12 bg-white border border-line rounded-card shadow-card mt-4">
+              <div className="text-center py-12 bg-card border border-line rounded-card shadow-card mt-4">
                 <Building2 size={48} className="mx-auto text-muted mb-4" />
                 <p className="text-muted">Nenhum imóvel encontrado</p>
               </div>
@@ -356,7 +356,7 @@ export default function PropertiesPage() {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
             <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -365,7 +365,7 @@ export default function PropertiesPage() {
                       valorVenda: formData.valorVenda!,
                     });
                 }}
-                className="bg-white max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg"
+                className="bg-card max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg"
               >
               <div className="p-6 border-b border-line">
                 <h2 className="text-xl font-bold text-ink">
@@ -376,24 +376,24 @@ export default function PropertiesPage() {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted mb-1">Título <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Título <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.titulo}
                       onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                       placeholder="Ex: Apartamento Moderno no Centro"
                     />
-                    {errors.titulo && <p className="text-xs text-[#c0392b] mt-1.5">{errors.titulo}</p>}
+                    {errors.titulo && <p className="text-xs text-danger mt-1.5">{errors.titulo}</p>}
                   </div>
 {/* 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Tipo <span className="text-danger">*</span></label>
                     <select
                       value={formData.tipo}
                       onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2 border border-line"
                     >
                       <option value="apartamento">Apartamento</option>
                       <option value="casa">Casa</option>
@@ -404,11 +404,11 @@ export default function PropertiesPage() {
                   </div> */}
 
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Status <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Status <span className="text-danger">*</span></label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     >
                       <option value="disponivel">Disponível</option>
                       {/* <option value="reservado">Reservado</option> */}
@@ -417,43 +417,43 @@ export default function PropertiesPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted mb-1">Endereço <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Endereço <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.endereco}
                       onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.endereco && <p className="text-xs text-[#c0392b] mt-1.5">{errors.endereco}</p>}
+                    {errors.endereco && <p className="text-xs text-danger mt-1.5">{errors.endereco}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Bairro <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Bairro <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.bairro}
                       onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.bairro && <p className="text-xs text-[#c0392b] mt-1.5">{errors.bairro}</p>}
+                    {errors.bairro && <p className="text-xs text-danger mt-1.5">{errors.bairro}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Cidade <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Cidade <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       required
                       value={formData.cidade}
                       onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.cidade && <p className="text-xs text-[#c0392b] mt-1.5">{errors.cidade}</p>}
+                    {errors.cidade && <p className="text-xs text-danger mt-1.5">{errors.cidade}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Valor Venda <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-muted mb-1">Valor Venda <span className="text-danger">*</span></label>
                     <input
                       type="number"
                       required
@@ -462,18 +462,18 @@ export default function PropertiesPage() {
                         ...formData, 
                         valorVenda: e.target.value === '' ? null : Number(e.target.value) })}
                         // valorVenda: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10 no-spinner"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30 no-spinner"
                     />
-                    {errors.valorVenda && <p className="text-xs text-[#c0392b] mt-1.5">{errors.valorVenda}</p>}
+                    {errors.valorVenda && <p className="text-xs text-danger mt-1.5">{errors.valorVenda}</p>}
                   </div>
 
                   {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Valor Aluguel</label>
+                    <label className="block text-sm font-medium text-muted mb-1">Valor Aluguel</label>
                     <input
                       type="number"
                       value={formData.valorAluguel}
                       onChange={(e) => setFormData({ ...formData, valorAluguel: Number(e.target.value) })}
-                      className="w-full p-2 border border-gray-300"
+                      className="w-full p-2 border border-line"
                     />
                   </div> */}
 
@@ -484,9 +484,9 @@ export default function PropertiesPage() {
                       required
                       value={formData.area}
                       onChange={(e) => setFormData({ ...formData, area: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.area && <p className="text-xs text-[#c0392b] mt-1.5">{errors.area}</p>}
+                    {errors.area && <p className="text-xs text-danger mt-1.5">{errors.area}</p>}
                   </div>
 
                   <div>
@@ -496,9 +496,9 @@ export default function PropertiesPage() {
                       required
                       value={formData.quartos}
                       onChange={(e) => setFormData({ ...formData, quartos: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.quartos && <p className="text-xs text-[#c0392b] mt-1.5">{errors.quartos}</p>}
+                    {errors.quartos && <p className="text-xs text-danger mt-1.5">{errors.quartos}</p>}
                   </div>
 
                   <div>
@@ -508,9 +508,9 @@ export default function PropertiesPage() {
                       required
                       value={formData.banheiros}
                       onChange={(e) => setFormData({ ...formData, banheiros: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.banheiros && <p className="text-xs text-[#c0392b] mt-1.5">{errors.banheiros}</p>}
+                    {errors.banheiros && <p className="text-xs text-danger mt-1.5">{errors.banheiros}</p>}
                   </div>
 
                   <div>
@@ -520,9 +520,9 @@ export default function PropertiesPage() {
                       required
                       value={formData.vagas}
                       onChange={(e) => setFormData({ ...formData, vagas: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     />
-                    {errors.vagas && <p className="text-xs text-[#c0392b] mt-1.5">{errors.vagas}</p>}
+                    {errors.vagas && <p className="text-xs text-danger mt-1.5">{errors.vagas}</p>}
                   </div>
 
                   <div className="md:col-span-2">
@@ -530,10 +530,10 @@ export default function PropertiesPage() {
                     <textarea
                       value={formData.descricao}
                       onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                       rows={3}
                     />
-                    {errors.descricao && <p className="text-xs text-[#c0392b] mt-1.5">{errors.descricao}</p>}
+                    {errors.descricao && <p className="text-xs text-danger mt-1.5">{errors.descricao}</p>}
                   </div>
                 </div>
               </div>
@@ -552,7 +552,7 @@ export default function PropertiesPage() {
                   type="submit"
                   // onClick={() => handleSave(formData)}
 
-                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
                 >
                   {editingImovel ? 'Salvar Alterações' : 'Cadastrar Imóvel'}
                 </button>

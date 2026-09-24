@@ -7,6 +7,7 @@ import InputMask from 'react-input-mask';
 import { authService } from '@/service/authService';
 import { usuarioService } from '@/service/usuarioService';
 import type { Usuario } from '@/types';
+import { ThemeSelector } from '@/components/ui/ThemeToggle';
 
 const formatarTelefone = (telefone: string) => {
   return (telefone || '')
@@ -17,7 +18,7 @@ const formatarTelefone = (telefone: string) => {
 };
 
 const inputClass =
-  'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10';
+  'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30';
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -135,22 +136,22 @@ export default function PerfilPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="bg-primary border-b border-primary-700">
+      <header className="bg-sidebar border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
           {/* <button
             onClick={() => router.push('/dashboard')}
-            className="inline-flex items-center gap-1.5 text-primary-100/80 hover:text-white mb-3 text-sm transition-colors"
+            className="inline-flex items-center gap-1.5 text-sidebar-fg/80 hover:text-white mb-3 text-sm transition-colors"
           >
             <ChevronLeft size={18} />
             Voltar ao painel
           </button> */}
           <div className="flex items-center gap-3">
-            <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-primary shadow-btn">
+            <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-on-accent shadow-btn">
               <User size={26} />
             </span>
             <div>
               <h1 className="text-2xl font-bold text-white tracking-tight">Meu Perfil</h1>
-              <p className="text-primary-100/80 text-sm">Gerencie seus dados pessoais</p>
+              <p className="text-sidebar-fg/80 text-sm">Gerencie seus dados pessoais</p>
             </div>
           </div>
         </div>
@@ -166,11 +167,11 @@ export default function PerfilPage() {
           <>
             {/* Resumo / informações fixas */}
             {user && (
-              <div className="bg-white border border-line rounded-card shadow-card p-6">
+              <div className="bg-card border border-line rounded-card shadow-card p-6">
                 <h2 className="text-lg font-semibold text-ink mb-4">Informações da conta</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-lg bg-brand-soft text-brand-fg flex items-center justify-center">
                       <Hash size={18} />
                     </span>
                     <div>
@@ -179,7 +180,7 @@ export default function PerfilPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-lg bg-accent-100 text-accent-700 flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-lg bg-accent-soft text-accent-hover flex items-center justify-center">
                       <Shield size={18} />
                     </span>
                     <div>
@@ -188,7 +189,7 @@ export default function PerfilPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-lg bg-brand-soft text-brand-fg flex items-center justify-center">
                       <Hash size={18} />
                     </span>
                     <div>
@@ -197,7 +198,7 @@ export default function PerfilPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-lg bg-brand-soft text-brand-fg flex items-center justify-center">
                       <Shield size={18} />
                     </span>
                     <div>
@@ -211,7 +212,7 @@ export default function PerfilPage() {
                   <button
                     type="button"
                     onClick={() => router.push('/trocar-senha')}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-line rounded-btn text-muted hover:bg-surface hover:text-primary transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-card border border-line rounded-btn text-muted hover:bg-surface hover:text-brand-fg transition-colors"
                   >
                     <KeyRound size={18} />
                     Alterar senha
@@ -223,7 +224,7 @@ export default function PerfilPage() {
             {/* Formulário de dados pessoais */}
             <form
               onSubmit={handleSubmit}
-              className="bg-white border border-line rounded-card shadow-card p-6"
+              className="bg-card border border-line rounded-card shadow-card p-6"
               noValidate
             >
               <h2 className="text-lg font-semibold text-ink mb-1">Dados pessoais</h2>
@@ -232,7 +233,7 @@ export default function PerfilPage() {
               {error && (
                 <div
                   role="alert"
-                  className="bg-[#fdeceb] border border-[#f2cdc9] px-4 py-3 text-sm text-[#c0392b] rounded-btn mb-5"
+                  className="bg-danger-bg border border-danger-border px-4 py-3 text-sm text-danger rounded-btn mb-5"
                 >
                   {error}
                 </div>
@@ -241,7 +242,7 @@ export default function PerfilPage() {
               {success && (
                 <div
                   role="status"
-                  className="bg-[#e8f6ee] border border-[#bfe3cd] px-4 py-3 text-sm text-[#0f8a52] rounded-btn mb-5 flex items-center gap-2"
+                  className="bg-success-bg border border-success-border px-4 py-3 text-sm text-success rounded-btn mb-5 flex items-center gap-2"
                 >
                   <CheckCircle size={18} />
                   Dados atualizados com sucesso!
@@ -251,7 +252,7 @@ export default function PerfilPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Nome <span className="text-red-500">*</span>
+                    Nome <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -270,7 +271,7 @@ export default function PerfilPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    E-mail <span className="text-red-500">*</span>
+                    E-mail <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -289,7 +290,7 @@ export default function PerfilPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Gênero <span className="text-red-500">*</span>
+                    Gênero <span className="text-danger">*</span>
                   </label>
                   <select
                     value={form.genero}
@@ -307,7 +308,7 @@ export default function PerfilPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Telefone <span className="text-red-500">*</span>
+                    Telefone <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -333,7 +334,7 @@ export default function PerfilPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Data de nascimento <span className="text-red-500">*</span>
+                    Data de nascimento <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Cake size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -361,7 +362,7 @@ export default function PerfilPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2.5 flex items-center justify-center gap-2 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 disabled:opacity-60 transition-colors"
+                  className="px-5 py-2.5 flex items-center justify-center gap-2 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-60 transition-colors"
                 >
                   {saving ? (
                     <>
@@ -374,6 +375,12 @@ export default function PerfilPage() {
                 </button>
               </div>
             </form>
+
+            <div className="bg-card border border-line rounded-card shadow-card p-6">
+              <h2 className="text-lg font-semibold text-ink">Aparência</h2>
+              <p className="text-sm text-muted mt-1 mb-4">Escolha o tema do CRM. A preferência fica salva neste navegador.</p>
+              <ThemeSelector />
+            </div>
           </>
         )}
       </main>

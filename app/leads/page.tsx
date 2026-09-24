@@ -177,7 +177,7 @@ export default function LeadsPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <span className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center shadow-btn">
+              <span className="w-12 h-12 rounded-xl bg-brand text-on-brand flex items-center justify-center shadow-btn">
                 <Users size={24} />
               </span>
               <div>
@@ -191,7 +191,7 @@ export default function LeadsPage() {
                 setErrors({});
                 setIsModalOpen(true);
               }}
-              className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors"
+              className="flex items-center gap-2 bg-brand text-on-brand px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
             >
               <Plus size={20} />
               Novo Lead
@@ -200,23 +200,23 @@ export default function LeadsPage() {
 
           {/* Stats Cards - usam totalElements para refletir base server-side */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Total de Leads</p>
               <p className="text-3xl font-bold text-ink">{totalElements}</p>
             </div>
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Ativos</p>
               <p className="text-3xl font-bold text-ink">
                 {Array.isArray(leads) ? leads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length : 0}
               </p>
             </div>
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Contrato</p>
-              <p className="text-3xl font-bold text-[#0f8a52]">
+              <p className="text-3xl font-bold text-success">
                 {Array.isArray(leads) ? leads.filter(l => l.status === 'contrato').length : 0}
               </p>
             </div>
-            <div className="bg-white p-5 border border-line rounded-card shadow-card">
+            <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Este Mês</p>
               <p className="text-3xl font-bold text-ink">
                 {Array.isArray(leads) ? leads.filter(l => {
@@ -232,7 +232,7 @@ export default function LeadsPage() {
 
         {/* Tabela */}
         {loading ? (
-          <div className="bg-white border border-line rounded-card shadow-card p-12 text-center">
+          <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
             <p className="text-muted animate-pulse">Carregando leads...</p>
           </div>
         ) : loadError ? (

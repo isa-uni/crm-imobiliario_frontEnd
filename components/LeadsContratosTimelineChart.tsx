@@ -6,6 +6,7 @@ import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react"
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns"
 import { dashboardCorretorService, PontoMensalDTO } from "@/service/dashboardCorretorService"
 import { parseApiError } from "@/lib/errorHandler"
+import { useThemeColors, chartTooltipStyle } from "@/hooks/useThemeColors"
 
 type Periodo = 6 | 12
 
@@ -20,6 +21,7 @@ function getPeriodoDates(meses: Periodo) {
 }
 
 export default function LeadsContratosTimelineChart() {
+  const cores = useThemeColors()
   const [periodo, setPeriodo] = useState<Periodo>(6)
   const [data, setData] = useState<PontoMensalDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,11 +56,11 @@ export default function LeadsContratosTimelineChart() {
   const totalContratos = useMemo(() => data.reduce((acc, d) => acc + d.contratosFechados, 0), [data])
 
   return (
-    <div className="bg-white border border-line rounded-card shadow-card p-6">
+    <div className="bg-card border border-line rounded-card shadow-card p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-            <TrendingUp size={20} className="text-primary" />
+          <span className="w-10 h-10 rounded-lg bg-brand-soft flex items-center justify-center">
+            <TrendingUp size={20} className="text-brand-fg" />
           </span>
           <div>
             <h2 className="text-lg font-semibold text-ink">Leads recebidos x Contratos fechados</h2>
@@ -74,7 +76,7 @@ export default function LeadsContratosTimelineChart() {
                 key={m}
                 onClick={() => setPeriodo(m)}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  periodo === m ? "bg-primary text-white" : "bg-white text-muted hover:bg-surface"
+                  periodo === m ? "bg-brand text-on-brand" : "bg-card text-muted hover:bg-surface"
                 }`}
               >
                 {m}M
@@ -84,7 +86,7 @@ export default function LeadsContratosTimelineChart() {
           <button
             onClick={() => load()}
             disabled={loading}
-            className="w-8 h-8 rounded-btn border border-line bg-white text-muted flex items-center justify-center hover:bg-surface disabled:opacity-50"
+            className="w-8 h-8 rounded-btn border border-line bg-card text-muted flex items-center justify-center hover:bg-surface disabled:opacity-50"
             aria-label="Recarregar"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -103,7 +105,7 @@ export default function LeadsContratosTimelineChart() {
           <p className="text-xs text-muted mt-1 max-w-md break-words">{error}</p>
           <button
             onClick={() => load()}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-btn text-sm font-semibold shadow-btn hover:bg-primary-700"
+            className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn text-sm font-semibold shadow-btn hover:bg-brand-hover"
           >
             Tentar novamente
           </button>
@@ -117,11 +119,11 @@ export default function LeadsContratosTimelineChart() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e1e8f0" />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} tickLine={false} axisLine={{ stroke: "#e1e8f0" }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} tickLine={false} axisLine={{ stroke: "#e1e8f0" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={cores.line} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: cores.muted }} tickLine={false} axisLine={{ stroke: cores.line }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: cores.muted }} tickLine={false} axisLine={{ stroke: cores.line }} />
               <Tooltip
-                contentStyle={{ borderRadius: 10, border: "1px solid #e1e8f0", boxShadow: "0 4px 12px rgba(15,39,64,0.08)", fontSize: 12 }}
+                {...chartTooltipStyle(cores)}
                 formatter={(value: any, name?: string) => {
                   const n = Number(value ?? 0)
                   const label = name === "leadsRecebidos" ? "Leads recebidos" : "Contratos fechados"
@@ -131,23 +133,23 @@ export default function LeadsContratosTimelineChart() {
               />
               <Legend
                 iconType="plainline"
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                wrapperStyle={{ fontSize: 12, paddingTop: 8, color: cores.muted }}
                 formatter={(value: string) => (value === "leadsRecebidos" ? "Leads recebidos" : "Contratos fechados")}
               />
               <Line
                 type="monotone"
                 dataKey="leadsRecebidos"
-                stroke="#0f2740"
+                stroke={cores["chart-1"]}
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: "#0f2740", strokeWidth: 1, stroke: "#fff" }}
+                dot={{ r: 3, fill: cores["chart-1"], strokeWidth: 1, stroke: cores.card }}
                 activeDot={{ r: 5 }}
               />
               <Line
                 type="monotone"
                 dataKey="contratosFechados"
-                stroke="#0f8a52"
+                stroke={cores.success}
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: "#0f8a52", strokeWidth: 1, stroke: "#fff" }}
+                dot={{ r: 3, fill: cores.success, strokeWidth: 1, stroke: cores.card }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>

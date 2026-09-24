@@ -100,11 +100,11 @@ export default function UsuarioModal({
   };
 
   const inputClass =
-    'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10';
+    'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg">
+    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-card shadow-card-lg">
         <div className="flex justify-between items-center p-6 border-b border-line">
           <h2 className="text-xl font-bold text-ink">
             {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
@@ -119,7 +119,7 @@ export default function UsuarioModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!editingUsuario && (
-            <div className="bg-[#eaf1f8] border border-[#cfe0ef] px-4 py-3 text-sm text-[#274b6b] rounded-btn">
+            <div className="bg-info-bg border border-info-border px-4 py-3 text-sm text-info rounded-btn">
               A senha inicial será os <strong>4 últimos dígitos do CPF</strong> e o
               usuário deverá trocá-la no primeiro acesso.
             </div>
@@ -128,7 +128,7 @@ export default function UsuarioModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Nome <span className="text-red-500">*</span>
+                Nome <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -138,12 +138,12 @@ export default function UsuarioModal({
                 className={inputClass}
                 placeholder="João Silva"
               />
-              {errors?.nome && <p className="text-[#c0392b] text-sm mt-1">{errors.nome}</p>}
+              {errors?.nome && <p className="text-danger text-sm mt-1">{errors.nome}</p>}
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Email <span className="text-red-500">*</span>
+                Email <span className="text-danger">*</span>
               </label>
               <input
                 type="email"
@@ -153,13 +153,13 @@ export default function UsuarioModal({
                 className={inputClass}
                 placeholder="joao@email.com"
               />
-              {errors?.email && <p className="text-[#c0392b] text-sm mt-1">{errors.email}</p>}
+              {errors?.email && <p className="text-danger text-sm mt-1">{errors.email}</p>}
             </div>
 
             {!editingUsuario && (
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                  CPF <span className="text-red-500">*</span>
+                  CPF <span className="text-danger">*</span>
                 </label>
                 <InputMask
                   mask="999.999.999-99"
@@ -170,7 +170,7 @@ export default function UsuarioModal({
                     <input {...inputProps} type="text" required className={inputClass} placeholder="000.000.000-00" />
                   )}
                 </InputMask>
-                {errors?.cpf && <p className="text-[#c0392b] text-sm mt-1">{errors.cpf}</p>}
+                {errors?.cpf && <p className="text-danger text-sm mt-1">{errors.cpf}</p>}
               </div>
             )}
 
@@ -185,7 +185,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Gênero <span className="text-red-500">*</span>
+                Gênero <span className="text-danger">*</span>
               </label>
               <select
                 value={formData.genero}
@@ -200,7 +200,7 @@ export default function UsuarioModal({
 
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Telefone <span className="text-red-500">*</span>
+                Telefone <span className="text-danger">*</span>
               </label>
               <InputMask
                 mask="(99) 99999-9999"
@@ -212,13 +212,13 @@ export default function UsuarioModal({
                 )}
               </InputMask>
               {errors?.telefone && (
-                <p className="text-[#c0392b] text-sm mt-1">{errors.telefone}</p>
+                <p className="text-danger text-sm mt-1">{errors.telefone}</p>
               )}
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Data de Nascimento <span className="text-red-500">*</span>
+                Data de Nascimento <span className="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -228,13 +228,13 @@ export default function UsuarioModal({
                 className={inputClass}
               />
               {errors?.dataNascimento && (
-                <p className="text-[#c0392b] text-sm mt-1">{errors.dataNascimento}</p>
+                <p className="text-danger text-sm mt-1">{errors.dataNascimento}</p>
               )}
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                Papel <span className="text-red-500">*</span>
+                Papel <span className="text-danger">*</span>
               </label>
               <select
                 required
@@ -249,7 +249,7 @@ export default function UsuarioModal({
                   </option>
                 ))}
               </select>
-              {errors?.papelId && <p className="text-[#c0392b] text-sm mt-1">{errors.papelId}</p>}
+              {errors?.papelId && <p className="text-danger text-sm mt-1">{errors.papelId}</p>}
             </div>
 
             <div>
@@ -281,7 +281,7 @@ export default function UsuarioModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 disabled:opacity-60 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-60 transition-colors"
             >
               {loading ? 'Salvando...' : editingUsuario ? 'Salvar Alterações' : 'Adicionar Usuário'}
             </button>

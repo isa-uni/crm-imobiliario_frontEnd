@@ -79,14 +79,14 @@ export default function LeadsTable({
 
   // Status colors
   const statusConfig = {
-    'lead': { label: 'Lead', color: 'bg-[#eef2f7] text-[#5f7488]', icon: Clock },
-    'oportunidade': { label: 'Oportunidade', color: 'bg-[#eaf1f8] text-[#27506f]', icon: Eye },
-    'visita-agendada': { label: 'Visita Agendada', color: 'bg-[#fdf3e0] text-[#b8790a]', icon: Clock },
-    'visita-realizada': { label: 'Visita Realizada', color: 'bg-[#eef1fd] text-[#5258a8]', icon: Clock },
-    'pasta': { label: 'Pasta', color: 'bg-[#fdf1ec] text-[#c05621]', icon: DollarSign },
-    'aprovado': { label: 'Aprovado', color: 'bg-[#e8f6ee] text-[#0f8a52]', icon: CheckCircle },
-    'contrato': { label: 'Contrato', color: 'bg-[#e8f6ee] text-[#0f7a45]', icon: CheckCircle },
-    'descarte': { label: 'Descarte', color: 'bg-[#fdeceb] text-[#c0392b]', icon: XCircle },
+    'lead': { label: 'Lead', color: 'bg-subtle text-muted', icon: Clock },
+    'oportunidade': { label: 'Oportunidade', color: 'bg-info-bg text-brand-fg', icon: Eye },
+    'visita-agendada': { label: 'Visita Agendada', color: 'bg-warning-bg text-warning', icon: Clock },
+    'visita-realizada': { label: 'Visita Realizada', color: 'bg-cat-indigo/10 text-cat-indigo', icon: Clock },
+    'pasta': { label: 'Pasta', color: 'bg-cat-orange/10 text-cat-orange', icon: DollarSign },
+    'aprovado': { label: 'Aprovado', color: 'bg-success-bg text-success', icon: CheckCircle },
+    'contrato': { label: 'Contrato', color: 'bg-success-bg text-success', icon: CheckCircle },
+    'descarte': { label: 'Descarte', color: 'bg-danger-bg text-danger', icon: XCircle },
   };
 
   // Filtros
@@ -190,8 +190,8 @@ export default function LeadsTable({
             onClick={() => { (setStatusFilter as any)('active'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
             className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'active'
-                ? 'bg-primary text-white shadow-btn'
-                : 'bg-white text-muted border border-line hover:bg-surface'
+                ? 'bg-brand text-on-brand shadow-btn'
+                : 'bg-card text-muted border border-line hover:bg-surface'
             }`}
           >
             Ativos ({safeLeads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length})
@@ -200,8 +200,8 @@ export default function LeadsTable({
             onClick={() => { (setStatusFilter as any)('archived'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
             className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'archived'
-                ? 'bg-primary text-white shadow-btn'
-                : 'bg-white text-muted border border-line hover:bg-surface'
+                ? 'bg-brand text-on-brand shadow-btn'
+                : 'bg-card text-muted border border-line hover:bg-surface'
             }`}
           >
             <Archive size={16} className="inline mr-1" />
@@ -211,8 +211,8 @@ export default function LeadsTable({
             onClick={() => { (setStatusFilter as any)('all'); if(serverSide) handleServerPageChange(0); else setCurrentPage(1); }}
             className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
               statusFilter === 'all'
-                ? 'bg-primary text-white shadow-btn'
-                : 'bg-white text-muted border border-line hover:bg-surface'
+                ? 'bg-brand text-on-brand shadow-btn'
+                : 'bg-card text-muted border border-line hover:bg-surface'
             }`}
           >
             Todos
@@ -221,11 +221,11 @@ export default function LeadsTable({
       </div>
 
       {/* Tabela */}
-      <div className="bg-white border border-line rounded-card shadow-card overflow-hidden">
+      <div className="bg-card border border-line rounded-card shadow-card overflow-hidden">
         {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#eef2f7] border-b border-line">
+            <thead className="bg-subtle border-b border-line">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Nome</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wide">Contato</th>
@@ -274,13 +274,13 @@ export default function LeadsTable({
                           }} className={`px-3 py-1 text-xs font-bold border-0 cursor-pointer rounded-full ${statusConfig[lead.status].color}`}>
                           <option value="lead">Lead</option><option value="oportunidade">Oportunidade</option><option value="visita-agendada">Visita Agendada</option><option value="visita-realizada">Visita Realizada</option><option value="pasta">Pasta</option><option value="aprovado">Aprovado</option><option value="contrato">Contrato</option><option value="descarte">Descarte</option>
                         </select>
-                        {lead.status === 'descarte' && lead.motivoDescarte && (<p className="text-xs text-[#c0392b] mt-2"><strong>Motivo:</strong> {lead.motivoDescarte}</p>)}
+                        {lead.status === 'descarte' && lead.motivoDescarte && (<p className="text-xs text-danger mt-2"><strong>Motivo:</strong> {lead.motivoDescarte}</p>)}
                       </td>
                       <td className="px-4 py-4"><div className="text-sm font-medium text-ink">R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}</div></td>
-                      <td className="px-4 py-4"><div className="space-y-1"><span className="text-sm font-medium text-ink">{getOrigemLabel(lead.origem)}</span>{lead.historico && (<span className="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-[#eef2f7] text-muted">{getHistoricoLabel(lead.historico)}</span>)}</div></td>
-                      <td className="px-4 py-4"><div className="text-xs"><p className="font-medium text-ink">{(lead as any).corretor?.nome || (lead as any).corretorNome || lead.corretorNome || '-'}</p><p className="text-muted">{(lead as any).equipe?.nome || (lead as any).equipeNome || lead.equipeNome || '-'}</p>{(lead.statusAtribuicao === 'AGUARDANDO_REDISTRIBUICAO' || (lead as any).statusAtribuicao==='AGUARDANDO_REDISTRIBUICAO') && (<span className="inline-flex mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold">AGUARDANDO</span>)}</div></td>
+                      <td className="px-4 py-4"><div className="space-y-1"><span className="text-sm font-medium text-ink">{getOrigemLabel(lead.origem)}</span>{lead.historico && (<span className="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-subtle text-muted">{getHistoricoLabel(lead.historico)}</span>)}</div></td>
+                      <td className="px-4 py-4"><div className="text-xs"><p className="font-medium text-ink">{(lead as any).corretor?.nome || (lead as any).corretorNome || lead.corretorNome || '-'}</p><p className="text-muted">{(lead as any).equipe?.nome || (lead as any).equipeNome || lead.equipeNome || '-'}</p>{(lead.statusAtribuicao === 'AGUARDANDO_REDISTRIBUICAO' || (lead as any).statusAtribuicao==='AGUARDANDO_REDISTRIBUICAO') && (<span className="inline-flex mt-1 px-2 py-0.5 bg-warning-bg text-warning rounded-full text-[10px] font-bold">AGUARDANDO</span>)}</div></td>
                       <td className="px-4 py-4"><div className="text-sm text-muted">{format(new Date(lead.dataAtualizacao), 'dd/MM/yy', { locale: ptBR })}</div></td>
-                      <td className="px-4 py-4"><div className="flex items-center justify-center gap-2"><button onClick={() => onView(lead)} className="p-2 rounded-lg text-primary hover:bg-primary-50"><Eye size={16} /></button><button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted hover:bg-surface"><Edit size={16} /></button></div></td>
+                      <td className="px-4 py-4"><div className="flex items-center justify-center gap-2"><button onClick={() => onView(lead)} className="p-2 rounded-lg text-brand-fg hover:bg-brand-soft"><Eye size={16} /></button><button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted hover:bg-surface"><Edit size={16} /></button></div></td>
                     </tr>
                   );
                 })
@@ -315,7 +315,7 @@ export default function LeadsTable({
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted">{format(new Date(lead.dataAtualizacao), 'dd/MM/yy')}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => onView(lead)} className="p-2 rounded-lg text-primary bg-primary-50"><Eye size={16} /></button>
+                      <button onClick={() => onView(lead)} className="p-2 rounded-lg text-brand-fg bg-brand-soft"><Eye size={16} /></button>
                       <button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted bg-surface"><Edit size={16} /></button>
                     </div>
                   </div>
@@ -335,14 +335,14 @@ export default function LeadsTable({
               <button
                 onClick={() => serverSide ? onPageChange?.(Math.max(0, page-1)) : handleServerPageChange(Math.max(1, currentPage-1))}
                 disabled={serverSide ? page===0 : currentPage===1}
-                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-white disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-card disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 <ChevronLeft size={16} /> Anterior
               </button>
               <button
                 onClick={() => serverSide ? onPageChange?.(Math.min(totalPages-1, page+1)) : handleServerPageChange(Math.min(totalPages, currentPage+1))}
                 disabled={serverSide ? page+1>=totalPages : currentPage===totalPages}
-                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-white disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-card disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 Próxima <ChevronRight size={16} />
               </button>

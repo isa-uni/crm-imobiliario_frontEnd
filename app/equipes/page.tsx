@@ -66,29 +66,29 @@ export default function EquipesPage() {
     <div className="min-h-screen bg-surface p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <span className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center"><Building2 size={24} /></span>
+          <span className="w-12 h-12 rounded-xl bg-brand text-on-brand flex items-center justify-center"><Building2 size={24} /></span>
           <div>
             <h1 className="text-3xl font-bold text-ink">Equipes</h1>
             <p className="text-muted">Gestão não altera clientes. Trocar gestor mantém corretores e clientes.</p>
           </div>
         </div>
 
-        <div className="bg-white border border-line rounded-card shadow-card p-6 mb-6">
+        <div className="bg-card border border-line rounded-card shadow-card p-6 mb-6">
           <h2 className="font-semibold text-ink mb-3 flex items-center gap-2"><Plus size={18}/> Nova equipe</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <input placeholder="Nome (ex: Equipe Londrina)" value={nome} onChange={e=>setNome(e.target.value)} className="p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300" />
+            <input placeholder="Nome (ex: Equipe Londrina)" value={nome} onChange={e=>setNome(e.target.value)} className="p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus" />
             <input placeholder="Descrição" value={descricao} onChange={e=>setDescricao(e.target.value)} className="p-2.5 border border-line rounded-btn" />
-            <select value={gestorId} onChange={e=>setGestorId(e.target.value)} className="p-2.5 border border-line rounded-btn bg-white">
+            <select value={gestorId} onChange={e=>setGestorId(e.target.value)} className="p-2.5 border border-line rounded-btn bg-card">
               <option value="">Sem gestor</option>
               {gestores.map(g=> <option key={g.id} value={g.id}>{g.nome} ({g.papel})</option>)}
             </select>
-            <button onClick={handleCriar} className="bg-primary text-white px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-primary-700">Criar equipe</button>
+            <button onClick={handleCriar} className="bg-brand text-on-brand px-6 py-2.5 rounded-btn font-semibold shadow-btn hover:bg-brand-hover">Criar equipe</button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {equipes.map(eq=> (
-            <div key={eq.id} className="bg-white border border-line rounded-card shadow-card p-6">
+            <div key={eq.id} className="bg-card border border-line rounded-card shadow-card p-6">
               <h3 className="font-bold text-ink text-lg">{eq.nome}</h3>
               <p className="text-sm text-muted">{eq.descricao || 'Sem descrição'}</p>
               <div className="flex items-center gap-2 mt-3 text-sm">
@@ -98,12 +98,12 @@ export default function EquipesPage() {
               </div>
               <div className="mt-4">
                 <label className="text-xs font-semibold text-muted uppercase">Alterar gestor</label>
-                <select value={eq.gestorId?.toString()||''} onChange={e=> handleTrocaGestor(eq.id, e.target.value)} className="mt-1 w-full p-2 border border-line rounded-btn bg-white text-sm">
+                <select value={eq.gestorId?.toString()||''} onChange={e=> handleTrocaGestor(eq.id, e.target.value)} className="mt-1 w-full p-2 border border-line rounded-btn bg-card text-sm">
                   <option value="">Remover gestor</option>
                   {gestores.map(g=> <option key={g.id} value={g.id}>{g.nome}</option>)}
                 </select>
                 <p className="text-xs text-muted mt-1">Clientes continuam com seus corretores.</p>
-                {eq.gestorId && <button onClick={()=>handleSincronizar(eq.id)} className="mt-2 text-xs font-semibold text-primary hover:underline">Sincronizar liderados</button>}
+                {eq.gestorId && <button onClick={()=>handleSincronizar(eq.id)} className="mt-2 text-xs font-semibold text-brand-fg hover:underline">Sincronizar liderados</button>}
                 <p className="text-xs text-muted">Corretores com gestor {eq.gestorNome || ''} serão movidos para esta equipe.</p>
               </div>
             </div>

@@ -38,8 +38,8 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-md w-full rounded-card shadow-card-lg">
+    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card max-w-md w-full rounded-card shadow-card-lg">
         <div className="flex justify-between items-center p-6 border-b border-line">
           <h2 className="text-xl font-bold text-ink">Novo Papel</h2>
           <button
@@ -53,17 +53,17 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-              Nome do papel <span className="text-red-500">*</span>
+              Nome do papel <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               required
               value={papel}
               onChange={(e) => setPapel(e.target.value)}
-              className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+              className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
               placeholder="ex.: gerente, recepcionista"
             />
-            {error && <p className="text-[#c0392b] text-sm mt-1">{error}</p>}
+            {error && <p className="text-danger text-sm mt-1">{error}</p>}
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -77,7 +77,7 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 disabled:opacity-60 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-60 transition-colors"
             >
               {loading ? 'Criando...' : 'Criar Papel'}
             </button>

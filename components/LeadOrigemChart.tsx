@@ -4,20 +4,11 @@ import { Lead } from "@/types";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tag } from "lucide-react";
 import { origemOptions } from "@/service/origemOptions";
+import { useThemeColors, chartSeries, chartTooltipStyle } from "@/hooks/useThemeColors";
 
 interface LeadOrigemChartProps {
   leads: Lead[]; //recebendo os leads
 }
-
-const CORES = [
-  "#0f2740",
-  "#f2a900",
-  "#27506f",
-  "#e8914a",
-  "#4a9c76",
-  "#3fb3b3",
-  "#7a5ca8",
-];
 
 const origemLabel = (origem: string) => {
   const opt = origemOptions.find((o) => o.value === origem);
@@ -25,6 +16,8 @@ const origemLabel = (origem: string) => {
 };
 
 export default function LeadOrigemChart({ leads }: LeadOrigemChartProps) { //espera receber uma lista de obj lead
+  const cores = useThemeColors();
+  const CORES = chartSeries(cores);
   const contagens: Record<string, number> = {};
   leads.forEach((l) => {
     const chave = l.origem || "sem_origem";
@@ -47,10 +40,10 @@ export default function LeadOrigemChart({ leads }: LeadOrigemChartProps) { //esp
   const total = data.reduce((acc, d) => acc + d.value, 0); //Calcula o total
 
   return (
-    <div className="w-full bg-white border border-line rounded-card shadow-card p-6">
+    <div className="w-full bg-card border border-line rounded-card shadow-card p-6">
       <div className="flex items-center gap-3 mb-4">
-        <span className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-          <Tag size={20} className="text-primary" />
+        <span className="w-10 h-10 rounded-lg bg-brand-soft flex items-center justify-center">
+          <Tag size={20} className="text-brand-fg" />
         </span>
         <div>
           <h2 className="text-lg font-semibold text-ink">Origem dos Leads</h2>
@@ -74,6 +67,7 @@ export default function LeadOrigemChart({ leads }: LeadOrigemChartProps) { //esp
                 outerRadius={85}//fazendo o gráfico ter um buraco no meio
                 paddingAngle={2}
                 strokeWidth={2}
+                stroke={cores.card}
               >
                 {data.map((_, index) => (
                   <Cell key={index} fill={CORES[index % CORES.length]} />
@@ -87,17 +81,12 @@ export default function LeadOrigemChart({ leads }: LeadOrigemChartProps) { //esp
                     "Leads",
                   ];
                 }}
-                contentStyle={{
-                  borderRadius: 10,
-                  border: "1px solid #e1e8f0",
-                  boxShadow: "0 4px 12px rgba(15,39,64,0.08)",
-                  fontSize: 13,
-                }}
+                {...chartTooltipStyle(cores)}
               />
               <Legend
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                wrapperStyle={{ fontSize: 12, paddingTop: 8, color: cores.muted }}
               />
             </PieChart>
           </ResponsiveContainer>

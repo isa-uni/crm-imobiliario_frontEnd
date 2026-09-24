@@ -6,7 +6,7 @@ import { parseApiError } from "@/lib/errorHandler"
 import { AlertTriangle, CheckCircle, FileText, RefreshCw, Loader2, Edit2 } from "lucide-react"
 
 function Evidencia({ fonte, onUse }: { fonte: any; onUse?: (v:string)=>void }) {
-  const confColor = fonte.confianca >=80 ? "bg-[#e8f6ee] text-[#0f8a52]" : fonte.confianca>=60 ? "bg-amber-50 text-amber-700" : "bg-[#fdeceb] text-[#c0392b]"
+  const confColor = fonte.confianca >=80 ? "bg-success-bg text-success" : fonte.confianca>=60 ? "bg-warning-bg text-warning" : "bg-danger-bg text-danger"
   return (
     <div className="border border-line rounded-btn p-3 bg-surface/50">
       <div className="flex items-center justify-between">
@@ -15,7 +15,7 @@ function Evidencia({ fonte, onUse }: { fonte: any; onUse?: (v:string)=>void }) {
       </div>
       <p className="text-xs text-muted mt-1">📄 {fonte.documentoNome || "—"} {fonte.pagina ? `• p.${fonte.pagina}` : ""}</p>
       {fonte.trecho && <p className="text-xs text-muted mt-1 italic line-clamp-2">“{fonte.trecho}”</p>}
-      {onUse && <button onClick={()=>onUse(fonte.valorExtraido)} className="mt-2 text-xs px-2 py-1 bg-primary text-white rounded-btn">Usar este valor</button>}
+      {onUse && <button onClick={()=>onUse(fonte.valorExtraido)} className="mt-2 text-xs px-2 py-1 bg-brand text-on-brand rounded-btn">Usar este valor</button>}
     </div>
   )
 }
@@ -201,13 +201,13 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
   }
 
   if (loading) return <div className="p-12 text-center text-muted animate-pulse">Carregando extração...</div>
-  if (error) return <div className="p-12 text-center"><p className="text-[#c0392b]">{error}</p><button onClick={load} className="mt-4 px-4 py-2 bg-primary text-white rounded-btn">Tentar novamente</button></div>
+  if (error) return <div className="p-12 text-center"><p className="text-danger">{error}</p><button onClick={load} className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn">Tentar novamente</button></div>
   if (!extracao) return null
 
   if (extracao.status === "processando" || extracao.status === "pendente") {
     return (
       <div className="p-12 text-center">
-        <Loader2 size={32} className="mx-auto animate-spin text-primary mb-3"/>
+        <Loader2 size={32} className="mx-auto animate-spin text-brand-fg mb-3"/>
         <p className="font-semibold text-ink">Processando documentos...</p>
         <p className="text-sm text-muted mt-1">Extraindo informações, validando e identificando conflitos</p>
       </div>
@@ -216,10 +216,10 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
   if (extracao.status === "erro") {
     return (
       <div className="p-12 text-center">
-        <AlertTriangle size={32} className="mx-auto text-[#c0392b] mb-3"/>
+        <AlertTriangle size={32} className="mx-auto text-danger mb-3"/>
         <p className="font-semibold text-ink">Falha na extração</p>
         <p className="text-sm text-muted mt-1">{extracao.erro || "Tente novamente"}</p>
-        <button onClick={async()=>{ await empreendimentoIaService.reprocessar(extracaoId); load()}} className="mt-4 px-4 py-2 bg-primary text-white rounded-btn">Reprocessar</button>
+        <button onClick={async()=>{ await empreendimentoIaService.reprocessar(extracaoId); load()}} className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn">Reprocessar</button>
       </div>
     )
   }
@@ -232,17 +232,17 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
 
   return (
     <div className="space-y-6">
-      <div className="bg-amber-50 border border-amber-200 rounded-card p-4 flex gap-3">
-        <AlertTriangle className="text-amber-600" size={20}/>
+      <div className="bg-warning-bg border border-warning-border rounded-card p-4 flex gap-3">
+        <AlertTriangle className="text-warning" size={20}/>
         <div>
-          <p className="text-sm font-semibold text-amber-800">Revisão necessária {extracao.status==="revisao" && "• baixa confiança ou conflitos detectados"}</p>
-          <p className="text-xs text-amber-700 mt-1">Confira os dados abaixo. Campos com ★ baixa confiança (&lt;60%) ou ⚠️ conflito precisam de atenção. Nenhum dado será salvo sem sua confirmação.</p>
+          <p className="text-sm font-semibold text-warning">Revisão necessária {extracao.status==="revisao" && "• baixa confiança ou conflitos detectados"}</p>
+          <p className="text-xs text-warning mt-1">Confira os dados abaixo. Campos com ★ baixa confiança (&lt;60%) ou ⚠️ conflito precisam de atenção. Nenhum dado será salvo sem sua confirmação.</p>
         </div>
       </div>
 
       {conflitos.length>0 && (
-        <div className="bg-white border border-[#f2cdc9] rounded-card p-6">
-          <h3 className="font-semibold text-[#c0392b] flex items-center gap-2"><AlertTriangle size={18}/> Conflitos encontrados</h3>
+        <div className="bg-card border border-danger-border rounded-card p-6">
+          <h3 className="font-semibold text-danger flex items-center gap-2"><AlertTriangle size={18}/> Conflitos encontrados</h3>
           <div className="mt-4 space-y-4">
             {conflitos.map((c,i)=>(
               <div key={i} className="border border-line rounded-card p-4">
@@ -265,7 +265,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         </div>
       )}
 
-      <div className="bg-white border border-line rounded-card shadow-card p-6">
+      <div className="bg-card border border-line rounded-card shadow-card p-6">
         <h3 className="font-semibold text-ink mb-4">Dados básicos</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
@@ -305,7 +305,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
       </div>
 
       {unidades.length > 0 && (
-        <div className="bg-white border border-line rounded-card shadow-card p-6">
+        <div className="bg-card border border-line rounded-card shadow-card p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-ink">Unidades ({unidades.length})</h3>
             <p className="text-xs text-muted">Extraídas da(s) tabela(s) de preço. Edite qualquer célula antes de confirmar.</p>
@@ -328,7 +328,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                           <input
                             value={linha[c.chave] ?? ""}
                             onChange={e => atualizarCelulaUnidade(i, c.chave, e.target.value)}
-                            className={`w-28 p-1.5 border rounded-btn ${conflitosCelula.length > 1 ? "border-amber-400 bg-amber-50" : "border-line"}`}
+                            className={`w-28 p-1.5 border rounded-btn ${conflitosCelula.length > 1 ? "border-warning bg-warning-bg" : "border-line"}`}
                             title={conflitosCelula.length > 1 ? "Conflito entre documentos — confira os valores abaixo" : undefined}
                           />
                           {conflitosCelula.length > 1 && (
@@ -336,7 +336,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                               {conflitosCelula.map((f: any, fi: number) => (
                                 <button key={fi} type="button"
                                   onClick={() => atualizarCelulaUnidade(i, c.chave, f.valorExtraido)}
-                                  className="block text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 whitespace-nowrap"
+                                  className="block text-[10px] px-1.5 py-0.5 rounded bg-warning-bg text-warning hover:bg-warning-border whitespace-nowrap"
                                   title={f.documentoNome}>
                                   {f.valorExtraido} ({f.documentoNome})
                                 </button>
@@ -347,7 +347,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                       )
                     })}
                     <td>
-                      <button type="button" onClick={() => removerUnidade(i)} className="text-muted hover:text-[#c0392b] px-1" title="Remover esta unidade">✕</button>
+                      <button type="button" onClick={() => removerUnidade(i)} className="text-muted hover:text-danger px-1" title="Remover esta unidade">✕</button>
                     </td>
                   </tr>
                 ))}
@@ -357,7 +357,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         </div>
       )}
 
-      <div className="bg-white border border-line rounded-card p-6">
+      <div className="bg-card border border-line rounded-card p-6">
         <h3 className="font-semibold text-ink mb-2">Fontes por campo</h3>
         <p className="text-xs text-muted mb-4">Cada valor mostra documento, página e trecho original para auditoria.</p>
         <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -374,7 +374,7 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
 
       <div className="flex gap-3">
         <button onClick={()=>window.history.back()} className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted">Cancelar</button>
-        <button onClick={handleConfirm} disabled={saving} className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn disabled:opacity-50 flex items-center justify-center gap-2">
+        <button onClick={handleConfirm} disabled={saving} className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn disabled:opacity-50 flex items-center justify-center gap-2">
           {saving ? <Loader2 size={16} className="animate-spin"/> : <CheckCircle size={16}/>} Confirmar e salvar
         </button>
       </div>

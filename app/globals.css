@@ -2,29 +2,158 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  color: #12212f;
-  background-color: #f2f5f9;
-  -webkit-font-smoothing: antialiased;
-}
+/*
+ * Tokens de tema (canais RGB). Use sempre as classes semânticas do Tailwind
+ * (bg-card, text-ink, bg-brand, text-danger...) — nunca cores fixas.
+ */
+@layer base {
+  :root {
+    color-scheme: light;
 
-/* Inputs, selects e textarea */
-input,
-textarea,
-select {
-  color: #12212f;
-  background-color: #ffffff;
-  caret-color: #12212f;
-}
+    --c-surface: 242 245 249;
+    --c-card: 255 255 255;
+    --c-subtle: 238 242 247;
+    --c-line: 225 232 240;
+    --c-ink: 18 33 47;
+    --c-muted: 95 116 136;
+    --c-placeholder: 154 171 186;
 
-select option {
-  color: #12212f;
-  background-color: #ffffff;
-}
+    --c-brand: 15 39 64;
+    --c-brand-hover: 22 53 79;
+    --c-on-brand: 255 255 255;
+    --c-brand-fg: 15 39 64;
+    --c-brand-soft: 238 244 250;
+    --c-focus: 143 181 211;
 
-input::placeholder,
-textarea::placeholder {
-  color: #9aabba;
+    --c-sidebar: 15 39 64;
+    --c-sidebar-fg: 219 232 244;
+
+    --c-accent: 242 169 0;
+    --c-accent-hover: 201 138 0;
+    --c-accent-soft: 253 239 210;
+    --c-on-accent: 15 39 64;
+
+    --c-success: 15 138 82;
+    --c-success-bg: 232 246 238;
+    --c-success-border: 191 227 205;
+    --c-warning: 180 83 9;
+    --c-warning-bg: 255 251 235;
+    --c-warning-border: 253 230 138;
+    --c-danger: 192 57 43;
+    --c-danger-bg: 253 236 235;
+    --c-danger-border: 242 205 201;
+    --c-info: 39 75 107;
+    --c-info-bg: 234 241 248;
+    --c-info-border: 207 224 239;
+
+    --c-overlay: 15 39 64;
+
+    --c-chart-1: 15 39 64;
+    --c-chart-2: 242 169 0;
+    --c-chart-3: 39 80 111;
+    --c-chart-4: 232 145 74;
+    --c-chart-5: 74 156 118;
+    --c-chart-6: 63 179 179;
+    --c-chart-7: 122 92 168;
+    --c-on-chart: 255 255 255;
+
+    /* Categorias (texto e tinta de fundo com /10) */
+    --c-cat-indigo: 82 88 168;
+    --c-cat-orange: 192 86 33;
+    --c-cat-purple: 106 76 152;
+    --c-cat-teal: 42 157 157;
+    --c-cat-green: 53 122 91;
+
+    --shadow-card: 0 1px 2px rgba(16, 38, 60, .06), 0 4px 14px rgba(16, 38, 60, .07);
+    --shadow-card-lg: 0 8px 30px rgba(16, 38, 60, .14);
+    --shadow-btn: 0 1px 2px rgba(16, 38, 60, .10);
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    --c-surface: 11 21 32;
+    --c-card: 17 31 46;
+    --c-subtle: 23 40 56;
+    --c-line: 34 54 74;
+    --c-ink: 230 237 244;
+    --c-muted: 147 166 184;
+    --c-placeholder: 95 116 136;
+
+    --c-brand: 47 101 146;
+    --c-brand-hover: 58 118 168;
+    --c-on-brand: 255 255 255;
+    --c-brand-fg: 143 181 211;
+    --c-brand-soft: 22 48 74;
+    --c-focus: 58 118 168;
+
+    --c-sidebar: 8 17 25;
+    --c-sidebar-fg: 184 208 230;
+
+    --c-accent: 242 169 0;
+    --c-accent-hover: 244 182 49;
+    --c-accent-soft: 51 38 10;
+    --c-on-accent: 15 39 64;
+
+    --c-success: 76 201 138;
+    --c-success-bg: 15 46 34;
+    --c-success-border: 27 90 62;
+    --c-warning: 246 200 96;
+    --c-warning-bg: 51 38 10;
+    --c-warning-border: 107 79 16;
+    --c-danger: 240 131 120;
+    --c-danger-bg: 58 23 20;
+    --c-danger-border: 110 42 36;
+    --c-info: 143 181 211;
+    --c-info-bg: 19 40 61;
+    --c-info-border: 37 73 107;
+
+    --c-overlay: 0 0 0;
+
+    --c-chart-1: 143 181 211;
+    --c-chart-2: 242 169 0;
+    --c-chart-3: 95 143 181;
+    --c-chart-4: 240 164 102;
+    --c-chart-5: 99 191 148;
+    --c-chart-6: 88 204 204;
+    --c-chart-7: 164 135 212;
+    --c-on-chart: 11 21 32;
+
+    --c-cat-indigo: 163 168 238;
+    --c-cat-orange: 240 164 102;
+    --c-cat-purple: 184 155 224;
+    --c-cat-teal: 88 204 204;
+    --c-cat-green: 99 191 148;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 14px rgba(0, 0, 0, .30);
+    --shadow-card-lg: 0 8px 30px rgba(0, 0, 0, .50);
+    --shadow-btn: 0 1px 2px rgba(0, 0, 0, .40);
+  }
+
+  body {
+    color: rgb(var(--c-ink));
+    background-color: rgb(var(--c-surface));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Inputs, selects e textarea */
+  input,
+  textarea,
+  select {
+    color: rgb(var(--c-ink));
+    background-color: rgb(var(--c-card));
+    caret-color: rgb(var(--c-ink));
+  }
+
+  select option {
+    color: rgb(var(--c-ink));
+    background-color: rgb(var(--c-card));
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--c-placeholder));
+  }
 }
 
 /* Chrome, Safari, Edge */

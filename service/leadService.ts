@@ -23,6 +23,17 @@ export const leadService = {
     return response.data;
   },
 
+  async exportarExcel(filtros: { search?: string; status?: string; month?: string; origem?: string; historico?: string }) {
+    const q: any = {}
+    if (filtros.search) q.search = filtros.search
+    if (filtros.status && filtros.status !== 'all') q.status = filtros.status
+    if (filtros.month && filtros.month !== 'all') q.month = filtros.month
+    if (filtros.origem && filtros.origem !== 'all') q.origem = filtros.origem
+    if (filtros.historico && filtros.historico !== 'all') q.historico = filtros.historico
+    const response = await api.get('/leads/exportar', { params: q, responseType: 'blob' })
+    return response.data as Blob
+  },
+
   async cadastrar(data: any) {
     const response = await api.post("/leads/cadastrar", data)
     console.log("response.data ", response.data)

@@ -39,8 +39,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-[50vh] flex items-center justify-center p-8">
-          <div className="bg-white border border-line rounded-card shadow-card p-8 max-w-lg w-full text-center">
-            <div className="mx-auto w-14 h-14 rounded-full bg-[#fdeceb] text-[#c0392b] flex items-center justify-center mb-4">
+          <div className="bg-card border border-line rounded-card shadow-card p-8 max-w-lg w-full text-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
               <AlertTriangle size={28} />
             </div>
             <h2 className="text-lg font-bold text-ink">Ocorreu um erro inesperado</h2>
@@ -54,7 +54,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             )}
             <button
               onClick={this.handleReset}
-              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700"
+              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover"
             >
               <RefreshCw size={16} /> Tentar novamente
             </button>

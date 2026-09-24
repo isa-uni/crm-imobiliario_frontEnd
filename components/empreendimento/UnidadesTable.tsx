@@ -16,7 +16,7 @@ const COLUNAS: { chave: keyof UnidadeDTO | "acoes"; label: string; ordenavel?: b
   { chave: "outrasAreas", label: "Outras áreas", render: (u) => u.outrasAreas ? m2(u.outrasAreas) : "—" },
   { chave: "garagem", label: "Garagem", render: (u) => u.garagem || "—" },
   { chave: "situacao", label: "Situação", ordenavel: true, render: (u) => <BadgeSituacao situacao={u.situacao} /> },
-  { chave: "preco", label: "Valor total", ordenavel: true, render: (u) => u.preco ? <span className="font-semibold text-[#0f8a52]">{brl(u.preco)}</span> : "—" },
+  { chave: "preco", label: "Valor total", ordenavel: true, render: (u) => u.preco ? <span className="font-semibold text-success">{brl(u.preco)}</span> : "—" },
   { chave: "ato", label: "Ato", render: (u) => u.ato ? brl(u.ato) : "—" },
   { chave: "subsidioCohapar", label: "Subsídio COHAPAR", render: (u) => u.subsidioCohapar ? brl(u.subsidioCohapar) : "—" },
   { chave: "financiamento", label: "Financiamento", render: (u) => u.financiamento ? brl(u.financiamento) : "—" },
@@ -90,7 +90,7 @@ export default function UnidadesTable({ empreendimentoId, resumo }: { empreendim
           </select>
         )}
         {!semFiltro && (
-          <button onClick={() => { setBusca(""); setSituacao(""); setBloco(""); setTipologia(""); setPagina(0) }} className="text-xs text-primary font-semibold hover:underline">
+          <button onClick={() => { setBusca(""); setSituacao(""); setBloco(""); setTipologia(""); setPagina(0) }} className="text-xs text-brand-fg font-semibold hover:underline">
             limpar filtros
           </button>
         )}
@@ -105,7 +105,7 @@ export default function UnidadesTable({ empreendimentoId, resumo }: { empreendim
                 <th key={String(c.chave)} className="py-2.5 px-3 font-semibold whitespace-nowrap">
                   {c.ordenavel ? (
                     <button onClick={() => alternarOrdenacao(String(c.chave))} className="flex items-center gap-1 hover:text-ink">
-                      {c.label} <ArrowUpDown size={12} className={sort.campo === c.chave ? "text-primary" : "text-muted/50"} />
+                      {c.label} <ArrowUpDown size={12} className={sort.campo === c.chave ? "text-brand-fg" : "text-muted/50"} />
                     </button>
                   ) : c.label}
                 </th>

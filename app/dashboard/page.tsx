@@ -118,16 +118,16 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="bg-primary border-b border-primary-700">
+      <header className="bg-sidebar border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-primary font-black text-sm shadow-btn">C</span>
+              <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-on-accent font-black text-sm shadow-btn">C</span>
               <h1 className="text-3xl font-bold text-white tracking-tight">
                 Olá, {nome}!
               </h1>
             </div>
-            <p className="text-primary-100/80 mt-1">
+            <p className="text-sidebar-fg/80 mt-1">
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {loading ? (
-          <div className="bg-white border border-line rounded-card shadow-card p-12 text-center">
+          <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
             <p className="text-muted animate-pulse">Carregando dashboard...</p>
           </div>
         ) : error ? (
@@ -149,14 +149,14 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
             {/* Leads Ativos */}
-            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+            <div className="bg-card border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
               <div className="flex items-center justify-between mb-5">
-                <span className="w-10 h-10 rounded-xl bg-primary-50 text-primary flex items-center justify-center">
+                <span className="w-10 h-10 rounded-xl bg-brand-soft text-brand-fg flex items-center justify-center">
                   <Users size={18} />
                 </span>
                 {stats.variacaoLeads !== 0 && (
                   <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${
-                    stats.variacaoLeads > 0 ? 'bg-[#e8f6ee] text-[#0f8a52]' : 'bg-[#fdeceb] text-[#c0392b]'
+                    stats.variacaoLeads > 0 ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
                   }`}>
                     {stats.variacaoLeads > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                     {Math.abs(stats.variacaoLeads).toFixed(0)}%
@@ -169,14 +169,14 @@ export default function Dashboard() {
             </div>
 
             {/* Fechamentos */}
-            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+            <div className="bg-card border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
               <div className="flex items-center justify-between mb-5">
-                <span className="w-10 h-10 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+                <span className="w-10 h-10 rounded-xl bg-success-bg text-success flex items-center justify-center">
                   <CheckCircle size={18} />
                 </span>
                 {stats.variacaoContratos !== 0 && (
                   <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${
-                    stats.variacaoContratos > 0 ? 'bg-[#e8f6ee] text-[#0f8a52]' : 'bg-[#fdeceb] text-[#c0392b]'
+                    stats.variacaoContratos > 0 ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
                   }`}>
                     {stats.variacaoContratos > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                     {Math.abs(stats.variacaoContratos).toFixed(0)}%
@@ -189,23 +189,23 @@ export default function Dashboard() {
             </div>
 
             {/* Faturamento */}
-            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+            <div className="bg-card border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
               <div className="flex items-center justify-between mb-5">
-                <span className="w-10 h-10 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+                <span className="w-10 h-10 rounded-xl bg-success-bg text-success flex items-center justify-center">
                   <DollarSign size={18} />
                 </span>
               </div>
               <p className="text-sm text-muted mb-1">Valor Contrato</p>
-              <p className="text-3xl font-bold text-[#0f8a52] tracking-tight">
+              <p className="text-3xl font-bold text-success tracking-tight">
                 R$ {(stats.valorContrato / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}k
               </p>
               <p className="text-xs text-muted mt-1.5">este mês</p>
             </div>
 
             {/* Taxa de Conversão */}
-            <div className="bg-white border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
+            <div className="bg-card border border-line rounded-card shadow-card hover:shadow-card-lg transition-shadow p-6">
               <div className="flex items-center justify-between mb-5">
-                <span className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+                <span className="w-10 h-10 rounded-xl bg-accent-soft text-accent-hover flex items-center justify-center">
                   <Target size={18} />
                 </span>
               </div>
@@ -224,36 +224,36 @@ export default function Dashboard() {
 
           <div className="flex flex-col gap-6">
             {/* Acesso rápido - lista compacta */}
-            <div className="bg-white border border-line rounded-card shadow-card p-6">
+            <div className="bg-card border border-line rounded-card shadow-card p-6">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Acesso rápido</h2>
               <div className="flex flex-col divide-y divide-line">
                 <Link href="/leads" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary-50 text-primary flex items-center justify-center">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-brand-soft text-brand-fg flex items-center justify-center">
                     <Users size={18} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink group-hover:text-primary transition-colors truncate">Gerenciar Leads</p>
+                    <p className="text-sm font-semibold text-ink group-hover:text-brand-fg transition-colors truncate">Gerenciar Leads</p>
                     <p className="text-xs text-muted truncate">{leads.length} leads</p>
                   </div>
-                  <ArrowUpRight size={15} className="text-line group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                  <ArrowUpRight size={15} className="text-line group-hover:text-brand-fg group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
                 </Link>
 
                 <Link href="/properties" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-[#e8f6ee] text-[#0f8a52] flex items-center justify-center">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-success-bg text-success flex items-center justify-center">
                     <Building2 size={18} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink group-hover:text-primary transition-colors truncate">Imóveis</p>
+                    <p className="text-sm font-semibold text-ink group-hover:text-brand-fg transition-colors truncate">Imóveis</p>
                     <p className="text-xs text-muted truncate">{imoveis.filter(i => i.status === 'disponivel').length} disponíveis</p>
                   </div>
-                  <ArrowUpRight size={15} className="text-line group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                  <ArrowUpRight size={15} className="text-line group-hover:text-brand-fg group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
                 </Link>
               </div>
             </div>
 
             {/* Relógio de Vendas - card de destaque */}
             <Link href="/relogio-vendas" className="group block flex-1">
-              <div className="h-full bg-primary rounded-card shadow-card p-6 flex flex-col justify-between hover:shadow-card-lg transition-shadow relative overflow-hidden">
+              <div className="h-full bg-sidebar rounded-card shadow-card p-6 flex flex-col justify-between hover:shadow-card-lg transition-shadow relative overflow-hidden">
                 <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/5" />
                 <div className="absolute -right-2 bottom-8 w-16 h-16 rounded-full bg-accent/10" />
                 <span className="w-11 h-11 rounded-xl bg-white/10 text-accent flex items-center justify-center relative">
@@ -261,7 +261,7 @@ export default function Dashboard() {
                 </span>
                 <div className="relative">
                   <h3 className="text-base font-semibold text-white">Relógio de Vendas</h3>
-                  <p className="text-sm text-primary-100/70 mt-0.5">Acompanhar metas do mês</p>
+                  <p className="text-sm text-sidebar-fg/70 mt-0.5">Acompanhar metas do mês</p>
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent mt-3 group-hover:gap-1.5 transition-all">
                     Ver detalhes <ArrowUpRight size={13} />
                   </span>

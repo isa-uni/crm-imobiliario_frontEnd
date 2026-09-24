@@ -123,25 +123,25 @@ export default function RedistribuicaoPage() {
     <div className="min-h-screen bg-surface p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <span className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><AlertTriangle size={24} /></span>
+          <span className="w-12 h-12 rounded-xl bg-warning-bg text-warning flex items-center justify-center"><AlertTriangle size={24} /></span>
           <div>
             <h1 className="text-3xl font-bold text-ink">Aguardando Redistribuição</h1>
             <p className="text-muted">Clientes sem responsável após desligamento. Atribua a um corretor ativo da mesma equipe.</p>
           </div>
-          <span className="ml-auto bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">{totalElements} pendentes</span>
+          <span className="ml-auto bg-warning-bg text-warning px-3 py-1 rounded-full text-sm font-bold">{totalElements} pendentes</span>
         </div>
 
         {leads.length===0 ? (
-          <div className="bg-white border border-line rounded-card shadow-card p-12 text-center">
+          <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
             <Users size={48} className="mx-auto text-muted opacity-50" />
             <p className="text-ink font-semibold mt-3">Nenhum cliente aguardando</p>
             <p className="text-sm text-muted">Todos os clientes estão atribuídos.</p>
           </div>
         ) : (
-          <div className="bg-white border border-line rounded-card shadow-card overflow-hidden">
+          <div className="bg-card border border-line rounded-card shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[#eef2f7] border-b border-line text-xs font-bold text-muted uppercase">
+                <thead className="bg-subtle border-b border-line text-xs font-bold text-muted uppercase">
                   <tr>
                     <th className="text-left p-3">Cliente</th>
                     <th className="text-left p-3">Equipe</th>
@@ -170,12 +170,12 @@ export default function RedistribuicaoPage() {
                         <td className="p-3">
                           <p className="font-semibold text-ink">{lead.nome}</p>
                           <p className="text-xs text-muted">{lead.email} • {lead.telefone}</p>
-                          <span className="inline-flex mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">AGUARDANDO</span>
+                          <span className="inline-flex mt-1 px-2 py-0.5 bg-warning-bg text-warning rounded-full text-xs font-bold">AGUARDANDO</span>
                         </td>
                         <td className="p-3 text-muted">{lead.equipeNome || equipes.find(e=>e.id===lead.equipeId)?.nome || '-'}</td>
                         <td className="p-3">
                           <p className="text-ink">{lead.corretorAnteriorNome || '-'}</p>
-                          <button onClick={()=>handleVerHistorico(lead)} className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1">
+                          <button onClick={()=>handleVerHistorico(lead)} className="text-xs text-brand-fg hover:underline inline-flex items-center gap-1 mt-1">
                             <Eye size={12} /> {histLoading[lead.id] ? 'Carregando...' : 'Ver histórico'}
                           </button>
                         </td>
@@ -184,8 +184,8 @@ export default function RedistribuicaoPage() {
                           {lead.dataDesligamento ? format(new Date(lead.dataDesligamento),'dd/MM/yyyy HH:mm') : format(new Date(lead.dataAtualizacao),'dd/MM/yyyy')}
                         </td>
                         <td className="p-3">
-                          {fallbackVazio && <p className="text-xs text-amber-700 mb-1">Nenhum corretor com equipe vinculada. Sincronize a equipe em Equipes.</p>}
-                          <select value={selected[lead.id]||''} onChange={e=> setSelected(s=>({...s,[lead.id]:e.target.value}))} className="w-full p-2 border border-line rounded-btn bg-white text-sm">
+                          {fallbackVazio && <p className="text-xs text-warning mb-1">Nenhum corretor com equipe vinculada. Sincronize a equipe em Equipes.</p>}
+                          <select value={selected[lead.id]||''} onChange={e=> setSelected(s=>({...s,[lead.id]:e.target.value}))} className="w-full p-2 border border-line rounded-btn bg-card text-sm">
                             <option value="">Selecione</option>
                             {equipeCorretores.map(c=> {
                               const mismatch = lead.equipeId && c.equipeId && c.equipeId!==lead.equipeId
@@ -194,7 +194,7 @@ export default function RedistribuicaoPage() {
                           </select>
                         </td>
                         <td className="p-3 text-center">
-                          <button onClick={()=>handleRedistribuir(lead)} className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-btn font-semibold shadow-btn hover:bg-primary-700">
+                          <button onClick={()=>handleRedistribuir(lead)} className="inline-flex items-center gap-1.5 bg-brand text-on-brand px-4 py-2 rounded-btn font-semibold shadow-btn hover:bg-brand-hover">
                             <ArrowRight size={16} /> Confirmar
                           </button>
                         </td>
@@ -208,8 +208,8 @@ export default function RedistribuicaoPage() {
               <div className="px-4 py-3 border-t border-line flex items-center justify-between bg-surface text-sm">
                 <span className="text-muted">Página {page+1} de {totalPages} • {totalElements} total</span>
                 <div className="flex gap-2">
-                  <button disabled={page===0} onClick={()=>setPage(p=>Math.max(0,p-1))} className="p-2 border border-line rounded-btn bg-white disabled:opacity-50"><ChevronLeft size={16}/></button>
-                  <button disabled={page+1>=totalPages} onClick={()=>setPage(p=>p+1)} className="p-2 border border-line rounded-btn bg-white disabled:opacity-50"><ChevronRight size={16}/></button>
+                  <button disabled={page===0} onClick={()=>setPage(p=>Math.max(0,p-1))} className="p-2 border border-line rounded-btn bg-card disabled:opacity-50"><ChevronLeft size={16}/></button>
+                  <button disabled={page+1>=totalPages} onClick={()=>setPage(p=>p+1)} className="p-2 border border-line rounded-btn bg-card disabled:opacity-50"><ChevronRight size={16}/></button>
                 </div>
               </div>
             )}
@@ -217,8 +217,8 @@ export default function RedistribuicaoPage() {
         )}
 
         {drawerLead && (
-          <div className="fixed inset-0 bg-black/40 flex justify-end z-50" onClick={()=>setDrawerLead(null)}>
-            <div className="w-full max-w-md bg-white h-full overflow-y-auto shadow-xl p-6" onClick={e=>e.stopPropagation()}>
+          <div className="fixed inset-0 bg-overlay/40 flex justify-end z-50" onClick={()=>setDrawerLead(null)}>
+            <div className="w-full max-w-md bg-card h-full overflow-y-auto shadow-xl p-6" onClick={e=>e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-ink">Histórico – {drawerLead.nome}</h2>
                 <button onClick={()=>setDrawerLead(null)} className="p-2 hover:bg-surface rounded-btn"><X size={18}/></button>

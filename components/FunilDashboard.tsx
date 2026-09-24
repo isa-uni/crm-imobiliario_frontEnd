@@ -7,13 +7,13 @@ interface FunilProps {
 }
 
 const ETAPAS = [
-  { status: "lead", label: "Leads", cor: "bg-primary-500" },
-  { status: "oportunidade", label: "Ops", cor: "bg-primary-400" },
-  { status: "visita-agendada", label: "Agend.", cor: "bg-accent-500" },
-  { status: "visita-realizada", label: "Visitas", cor: "bg-[#4a9c76]" },
-  { status: "pasta", label: "Pastas", cor: "bg-[#e8914a]" },
-  { status: "aprovado", label: "Aprov.", cor: "bg-[#3fb3b3]" },
-  { status: "contrato", label: "Vendas", cor: "bg-[#7a5ca8]" },
+  { status: "lead", label: "Leads", cor: "bg-chart-3" },
+  { status: "oportunidade", label: "Ops", cor: "bg-chart-1" },
+  { status: "visita-agendada", label: "Agend.", cor: "bg-accent" },
+  { status: "visita-realizada", label: "Visitas", cor: "bg-chart-5" },
+  { status: "pasta", label: "Pastas", cor: "bg-chart-4" },
+  { status: "aprovado", label: "Aprov.", cor: "bg-chart-6" },
+  { status: "contrato", label: "Vendas", cor: "bg-chart-7" },
 ] as const;
 
 // mesma ordem usada no Relógio de Vendas: um lead com status mais avançado é contado como
@@ -46,7 +46,7 @@ export default function Funil({ leads }: FunilProps) {
   });
 
   return (
-    <div className="w-full bg-white border border-line rounded-card shadow-card p-6">
+    <div className="w-full bg-card border border-line rounded-card shadow-card p-6">
       <h2 className="mb-4 text-xl font-semibold text-ink">
         Funil de processos
       </h2>
@@ -57,7 +57,7 @@ export default function Funil({ leads }: FunilProps) {
             <span className="w-16 shrink-0 text-xs font-semibold text-ink text-right">{row.label}</span>
             <div className="relative flex-1">
               <div
-                className={`${row.cor} h-6 flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                className={`${row.cor} h-6 flex items-center justify-center text-on-chart text-xs font-bold shadow-sm`}
                 style={{
                   width: `${100 - row.index * 12}%`,
                   clipPath: "polygon(0 0, 100% 0, 95% 100%, 5% 100%)",

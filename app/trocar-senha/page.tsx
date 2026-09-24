@@ -66,15 +66,15 @@ export default function TrocarSenhaPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary-800 to-primary-700 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-surface p-6">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-card shadow-card-lg p-8">
+        <div className="bg-card rounded-card shadow-card-lg p-8">
           <div className="flex items-center gap-3 mb-7">
-            <span className="w-11 h-11 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-white shadow-btn">
-              <Building2 size={24} className="text-primary" />
+            <span className="w-11 h-11 rounded-lg bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-on-accent shadow-btn">
+              <Building2 size={24} />
             </span>
             <div>
-              <p className="text-lg font-extrabold text-primary leading-tight tracking-tight">CRM Imóveis</p>
+              <p className="text-lg font-extrabold text-brand-fg leading-tight tracking-tight">CRM Imóveis</p>
               <p className="text-xs text-muted">Sistema de gestão de clientes e vendas</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function TrocarSenhaPage() {
                   value={senhaAtual}
                   onChange={(e) => setSenhaAtual(e.target.value)}
                   placeholder="Sua senha atual"
-                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-white text-ink placeholder:text-muted/50 focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                 />
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function TrocarSenhaPage() {
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
                   placeholder="Mínimo de 8 caracteres"
-                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-white text-ink placeholder:text-muted/50 focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function TrocarSenhaPage() {
                   value={confirmar}
                   onChange={(e) => setConfirmar(e.target.value)}
                   placeholder="Repita a nova senha"
-                  className="w-full pl-10 pr-10 py-2.5 border border-line rounded-btn bg-white text-ink placeholder:text-muted/50 focus:outline-none focus:border-primary-300 focus:ring-4 focus:ring-primary/10"
+                  className="w-full pl-10 pr-10 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                 />
                 <button
                   type="button"
@@ -152,7 +152,7 @@ export default function TrocarSenhaPage() {
             {error && (
               <div
                 role="alert"
-                className="bg-[#fdeceb] border border-[#f2cdc9] px-4 py-3 text-sm text-[#c0392b] rounded-btn"
+                className="bg-danger-bg border border-danger-border px-4 py-3 text-sm text-danger rounded-btn"
               >
                 {error}
               </div>
@@ -161,7 +161,7 @@ export default function TrocarSenhaPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-btn font-semibold shadow-btn hover:bg-primary-700 transition-colors disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 bg-brand text-on-brand py-2.5 rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors disabled:opacity-60"
             >
               {loading ? (
                 <>

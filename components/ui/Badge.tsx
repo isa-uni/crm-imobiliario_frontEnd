@@ -3,11 +3,11 @@ import { ReactNode } from "react"
 export type BadgeTone = "success" | "warning" | "danger" | "info" | "neutral"
 
 const TONES: Record<BadgeTone, string> = {
-  success: "bg-[#e8f6ee] text-[#0f8a52]",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-[#fdeceb] text-[#c0392b]",
-  info: "bg-primary-50 text-primary",
-  neutral: "bg-[#eef2f7] text-[#5f7488]",
+  success: "bg-success-bg text-success",
+  warning: "bg-warning-bg text-warning",
+  danger: "bg-danger-bg text-danger",
+  info: "bg-brand-soft text-brand-fg",
+  neutral: "bg-subtle text-muted",
 }
 
 export function Badge({ tone = "neutral", children, className = "" }: { tone?: BadgeTone; children: ReactNode; className?: string }) {

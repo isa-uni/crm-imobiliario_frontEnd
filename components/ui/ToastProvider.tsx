@@ -53,19 +53,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none max-w-[420px] w-[calc(100%-2rem)]">
         {toasts.map(t => {
-          const bg = t.type === 'error' ? 'bg-[#c0392b] border-[#a93226]' : t.type === 'success' ? 'bg-[#0f8a52] border-[#0a6b3e]' : t.type === 'warning' ? 'bg-amber-600 border-amber-700' : 'bg-primary border-primary-700'
+          const bg = t.type === 'error' ? 'bg-danger-bg border-danger-border text-danger' : t.type === 'success' ? 'bg-success-bg border-success-border text-success' : t.type === 'warning' ? 'bg-warning-bg border-warning-border text-warning' : 'bg-info-bg border-info-border text-info'
           const Icon = t.type === 'error' ? AlertCircle : t.type === 'success' ? CheckCircle : t.type === 'warning' ? AlertTriangle : Info
           return (
             <div
               key={t.id}
               role={t.type === 'error' ? 'alert' : 'status'}
-              className={`pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-card shadow-card-lg border text-white text-sm leading-snug ${bg} animate-in slide-in-from-top-2`}
+              className={`pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-card shadow-card-lg border text-sm font-medium leading-snug ${bg} animate-in slide-in-from-top-2`}
             >
               <Icon size={18} className="mt-0.5 shrink-0" />
               <p className="flex-1 break-words">{t.message}</p>
               <button
                 onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
-                className="shrink-0 -mr-1 -my-1 p-1.5 rounded-btn hover:bg-white/15"
+                className="shrink-0 -mr-1 -my-1 p-1.5 rounded-btn hover:bg-ink/10"
                 aria-label="Fechar"
               >
                 <X size={16} />

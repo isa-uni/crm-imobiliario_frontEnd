@@ -43,8 +43,8 @@ export default function EmpreendimentoUploadModal({ open, onClose, empreendiment
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-2xl rounded-card shadow-card-lg overflow-hidden">
+    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card w-full max-w-2xl rounded-card shadow-card-lg overflow-hidden">
         <div className="p-6 border-b border-line flex items-center justify-between">
           <h2 className="text-lg font-bold text-ink">{empreendimentoId ? "Adicionar documentos" : "Novo empreendimento"}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-btn hover:bg-surface flex items-center justify-center"><X size={18}/></button>
@@ -55,11 +55,11 @@ export default function EmpreendimentoUploadModal({ open, onClose, empreendiment
             onDragOver={e=>{e.preventDefault(); setDragOver(true)}}
             onDragLeave={()=>setDragOver(false)}
             onDrop={e=>{e.preventDefault(); setDragOver(false); onFiles(e.dataTransfer.files)}}
-            className={`border-2 border-dashed rounded-card p-8 text-center ${dragOver?"border-primary bg-primary-50":"border-line bg-surface/50"}`}
+            className={`border-2 border-dashed rounded-card p-8 text-center ${dragOver?"border-brand bg-brand-soft":"border-line bg-surface/50"}`}
           >
-            <Upload size={32} className="mx-auto text-primary mb-2"/>
+            <Upload size={32} className="mx-auto text-brand-fg mb-2"/>
             <p className="text-sm text-muted">Arraste arquivos ou</p>
-            <label className="inline-flex mt-2 px-4 py-2 bg-primary text-white rounded-btn text-sm font-semibold cursor-pointer hover:bg-primary-700">
+            <label className="inline-flex mt-2 px-4 py-2 bg-brand text-on-brand rounded-btn text-sm font-semibold cursor-pointer hover:bg-brand-hover">
               Selecionar arquivos
               <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png" className="hidden" onChange={e=>onFiles(e.target.files)} />
             </label>
@@ -70,7 +70,7 @@ export default function EmpreendimentoUploadModal({ open, onClose, empreendiment
             <div className="space-y-2">
               {files.map((f,i)=>(
                 <div key={i} className="flex items-center gap-3 p-3 bg-surface border border-line rounded-btn">
-                  <FileText size={18} className="text-primary"/>
+                  <FileText size={18} className="text-brand-fg"/>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink truncate">{f.name}</p>
                     <p className="text-xs text-muted">{(f.size/1024).toFixed(0)} KB • {f.type || f.name.split(".").pop()}</p>
@@ -82,14 +82,14 @@ export default function EmpreendimentoUploadModal({ open, onClose, empreendiment
             </div>
           )}
 
-          <div className="bg-amber-50 border border-amber-200 rounded-btn p-3 flex gap-2">
-            <AlertTriangle size={16} className="text-amber-600 mt-0.5"/>
-            <p className="text-xs text-amber-800">A extração é automática e <b>não inventa dados</b>: usa apenas regras de leitura de texto, tabelas e planilhas. Campos ausentes ficarão como “não informado” para você preencher. Conflitos entre documentos serão sinalizados para escolha.</p>
+          <div className="bg-warning-bg border border-warning-border rounded-btn p-3 flex gap-2">
+            <AlertTriangle size={16} className="text-warning mt-0.5"/>
+            <p className="text-xs text-warning">A extração é automática e <b>não inventa dados</b>: usa apenas regras de leitura de texto, tabelas e planilhas. Campos ausentes ficarão como “não informado” para você preencher. Conflitos entre documentos serão sinalizados para escolha.</p>
           </div>
         </div>
         <div className="p-6 border-t border-line flex gap-3">
           <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-surface">Cancelar</button>
-          <button onClick={handleUpload} disabled={uploading || files.length===0} className="flex-1 px-4 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={handleUpload} disabled={uploading || files.length===0} className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-50 flex items-center justify-center gap-2">
             {uploading ? <><Loader2 size={16} className="animate-spin"/> Enviando...</> : "Enviar para análise"}
           </button>
         </div>

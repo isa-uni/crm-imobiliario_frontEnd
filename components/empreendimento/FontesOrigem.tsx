@@ -34,8 +34,8 @@ export default function FontesOrigem({ empreendimentoId }: { empreendimentoId: n
   if (!fontes || fontes.length === 0) return null
 
   return (
-    <div className="bg-white border border-line rounded-card p-6">
-      <h3 className="font-semibold text-ink flex items-center gap-2"><FileSearch size={18} className="text-primary" /> Origem dos dados</h3>
+    <div className="bg-card border border-line rounded-card p-6">
+      <h3 className="font-semibold text-ink flex items-center gap-2"><FileSearch size={18} className="text-brand-fg" /> Origem dos dados</h3>
       <p className="text-xs text-muted mt-1 mb-4">Cada campo abaixo mostra de qual documento, página e trecho o valor foi extraído — para conferência antes de usar com o cliente.</p>
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {fontes.map(f => (

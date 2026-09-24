@@ -78,12 +78,12 @@ export default function RouteShell({ children }: { children: React.ReactNode }) 
   if (!checked) return null;
 
   const inactivityModal = showWarning ? (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-card shadow-card-lg max-w-md w-full p-6 border border-line">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay/50 p-4">
+      <div className="bg-card rounded-card shadow-card-lg max-w-md w-full p-6 border border-line">
         <h3 className="text-lg font-bold text-ink">Sessão expirando</h3>
         <p className="text-sm text-muted mt-2">Você ficou inativo por 30 minutos. Sua sessão será encerrada em <span className="font-bold text-ink">{countdown}s</span> e você será redirecionado para o login.</p>
         <div className="mt-5 flex gap-3">
-          <button onClick={keepAlive} className="flex-1 py-2.5 bg-primary text-white rounded-btn font-semibold shadow-btn hover:bg-primary-700">Continuar logado</button>
+          <button onClick={keepAlive} className="flex-1 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover">Continuar logado</button>
           <button onClick={logout} className="px-4 py-2.5 border border-line rounded-btn text-muted hover:bg-surface">Sair agora</button>
         </div>
       </div>
