@@ -4,6 +4,8 @@ import './globals.css'
 import RouteShell from '@/components/RouteShell'
 import { ToastProvider, GlobalToastSetter } from '@/components/ui/ToastProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ConfirmProvider } from '@/components/ui/ConfirmDialog'
+import { ConexaoBanner } from '@/components/ui/ConexaoBanner'
 import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -24,11 +26,14 @@ export default function RootLayout({
         <Providers>
           <ToastProvider>
             <GlobalToastSetter />
-            <ErrorBoundary>
-              <RouteShell>
-                {children}
-              </RouteShell>
-            </ErrorBoundary>
+            <ConfirmProvider>
+              <ConexaoBanner />
+              <ErrorBoundary>
+                <RouteShell>
+                  {children}
+                </RouteShell>
+              </ErrorBoundary>
+            </ConfirmProvider>
           </ToastProvider>
         </Providers>
       </body>

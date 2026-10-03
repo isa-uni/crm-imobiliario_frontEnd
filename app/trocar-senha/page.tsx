@@ -1,10 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Eye, EyeOff, Building2, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, Building2, Loader2, Check, Circle } from 'lucide-react';
 import { authService } from '@/service/authService';
 import { usuarioService } from '@/service/usuarioService';
+import { parseApiError } from '@/lib/errorHandler';
+import { textoDoErro } from '@/lib/feedback';
+import { InlineError } from '@/components/ui/ErrorState';
+import { useValidacao, classeErro } from '@/hooks/useValidacao';
+import { campo, problemaSenha, type Regras } from '@/lib/validacao';
+
+type FormSenha = { senhaAtual: string; novaSenha: string; confirmar: string };
+
+// requisitos exibidos enquanto a pessoa digita (mesma regra do backend: 8+ caracteres e 3 dos 4 tipos)
+const REQUISITOS = [
+  { texto: 'Pelo menos 8 caracteres', ok: (s: string) => s.length >= 8 },
+  { texto: 'Letra maiúscula', ok: (s: string) => /[A-Z]/.test(s) },
+  { texto: 'Letra minúscula', ok: (s: string) => /[a-z]/.test(s) },
+  { texto: 'Número', ok: (s: string) => /\d/.test(s) },
+  { texto: 'Caractere especial (ex.: ! @ #)', ok: (s: string) => /[^A-Za-z0-9]/.test(s) },
+];
 
 export default function TrocarSenhaPage() {
   const router = useRouter();
@@ -15,6 +31,21 @@ export default function TrocarSenhaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [obrigatorio, setObrigatorio] = useState(false);
+  const form: FormSenha = { senhaAtual, novaSenha, confirmar };
+  const regras = useMemo<Regras<FormSenha>>(() => ({
+    senhaAtual: campo('Informe a sua senha atual.'),
+    novaSenha: campo('Informe a nova senha.', problemaSenha),
+    confirmar: (valor, f) => !valor ? 'Confirme a nova senha.'
+      : valor !== f.novaSenha ? 'A confirmação está diferente da nova senha. Digite a mesma senha nos dois campos.' : null,
+  }), []);
+  const v = useValidacao<FormSenha>(regras);
+  const alterar = (nome: keyof FormSenha, valor: string, set: (x: string) => void) => {
+    set(valor);
+    const novo = { ...form, [nome]: valor };
+    v.aoAlterar(nome, novo);
+    if (nome === 'novaSenha' && confirmar) v.aoAlterar('confirmar', novo);
+  };
+  const cls = (nome: string) => `w-full pl-10 pr-3 py-2.5 border rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:ring-4 ${classeErro(!!v.erros[nome])}`;
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -28,20 +59,8 @@ export default function TrocarSenhaPage() {
     e.preventDefault();
     setError(null);
 
-    if (!senhaAtual || !novaSenha || !confirmar) {
-      setError('Preencha todos os campos para continuar.');
-      return;
-    }
-
-    if (novaSenha.length < 8) {
-      setError('A nova senha deve ter no mínimo 8 caracteres (com maiúscula, minúscula, número e caractere especial).');
-      return;
-    }
-
-    if (novaSenha !== confirmar) {
-      setError('A confirmação não confere com a nova senha.');
-      return;
-    }
+    // antes só verificava o tamanho; a senha fraca só era recusada depois, pelo servidor
+    if (!v.validarTudo(form)) return;
 
     setLoading(true);
     try {
@@ -51,15 +70,10 @@ export default function TrocarSenhaPage() {
       authService.logoutLocal();
       router.replace('/login?reason=senha');
     } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Sua sessão expirou. Faça login novamente.');
-      } else if (err.response?.data && typeof err.response.data === 'string') {
-        setError(err.response.data);
-      } else if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Não foi possível alterar a senha. Tente novamente.');
-      }
+      // motivo real vindo do backend, junto ao campo: senha atual incorreta, senha fraca, etc.
+      const p = parseApiError(err);
+      if (p.fields && Object.keys(p.fields).length) v.aplicarErrosServidor(p.fields);
+      else setError(textoDoErro(p));
     } finally {
       setLoading(false);
     }
@@ -86,7 +100,7 @@ export default function TrocarSenhaPage() {
               : 'Defina uma nova senha para a sua conta.'}
           </p>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form ref={v.formRef as any} onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label htmlFor="senhaAtual" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                 Senha atual
@@ -98,11 +112,13 @@ export default function TrocarSenhaPage() {
                   type={showSenhas ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={senhaAtual}
-                  onChange={(e) => setSenhaAtual(e.target.value)}
+                  onChange={(e) => alterar('senhaAtual', e.target.value, setSenhaAtual)}
+                  {...v.ligar('senhaAtual', form)}
                   placeholder="Sua senha atual"
-                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
+                  className={cls('senhaAtual')}
                 />
               </div>
+              <InlineError id="senhaAtual-erro" message={v.erros.senhaAtual} />
             </div>
 
             <div>
@@ -116,11 +132,26 @@ export default function TrocarSenhaPage() {
                   type={showSenhas ? 'text' : 'password'}
                   autoComplete="new-password"
                   value={novaSenha}
-                  onChange={(e) => setNovaSenha(e.target.value)}
+                  onChange={(e) => alterar('novaSenha', e.target.value, setNovaSenha)}
+                  {...v.ligar('novaSenha', form)}
                   placeholder="Mínimo de 8 caracteres"
-                  className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
+                  className={cls('novaSenha')}
                 />
               </div>
+              <InlineError id="novaSenha-erro" message={v.erros.novaSenha} />
+              {novaSenha && (
+                <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 text-xs" aria-label="Requisitos da nova senha">
+                  {REQUISITOS.map(r => {
+                    const ok = r.ok(novaSenha)
+                    return (
+                      <li key={r.texto} className={`flex items-center gap-1 ${ok ? 'text-success' : 'text-muted'}`}>
+                        {ok ? <Check size={12} aria-hidden="true" /> : <Circle size={10} aria-hidden="true" />}
+                        {r.texto}<span className="sr-only">{ok ? ': atendido' : ': pendente'}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
 
             <div>
@@ -134,9 +165,10 @@ export default function TrocarSenhaPage() {
                   type={showSenhas ? 'text' : 'password'}
                   autoComplete="new-password"
                   value={confirmar}
-                  onChange={(e) => setConfirmar(e.target.value)}
+                  onChange={(e) => alterar('confirmar', e.target.value, setConfirmar)}
+                  {...v.ligar('confirmar', form)}
                   placeholder="Repita a nova senha"
-                  className="w-full pl-10 pr-10 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
+                  className={`${cls('confirmar')} pr-10`}
                 />
                 <button
                   type="button"
@@ -147,6 +179,7 @@ export default function TrocarSenhaPage() {
                   {showSenhas ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              <InlineError id="confirmar-erro" message={v.erros.confirmar} />
             </div>
 
             {error && (
@@ -166,7 +199,7 @@ export default function TrocarSenhaPage() {
               {loading ? (
                 <>
                   <Loader2 size={20} className="animate-spin" />
-                  Salvando...
+                  Alterando senha...
                 </>
               ) : (
                 'Salvar nova senha'
@@ -175,7 +208,7 @@ export default function TrocarSenhaPage() {
           </form>
 
           <p className="mt-6 text-sm text-muted text-center">
-            A senha deve ter no mínimo 8 caracteres, com maiúscula, minúscula, número ou especial.
+            A senha deve ter no mínimo 8 caracteres e combinar pelo menos 3 destes tipos: maiúscula, minúscula, número e caractere especial.
           </p>
         </div>
       </div>

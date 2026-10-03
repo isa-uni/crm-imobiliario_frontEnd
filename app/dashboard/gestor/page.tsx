@@ -8,6 +8,10 @@ import {
   RefreshCw, Tag, Calendar, Award, ArrowUp, ArrowDown
 } from 'lucide-react'
 import { authService } from '@/service/authService'
+import { useToast } from '@/components/ui/ToastProvider'
+import { ErrorState, InlineError } from '@/components/ui/ErrorState'
+import { parseApiError } from '@/lib/errorHandler'
+import { notificarErro, textoDoErro } from '@/lib/feedback'
 import { dashboardGestorService, DashboardGestorDTO } from '@/service/dashboardGestorService'
 import { origemOptions } from '@/service/origemOptions'
 import {
@@ -66,6 +70,8 @@ function RadialProgress({ percent, size = 128, strokeWidth = 12, color = cssVar(
 }
 
 export default function DashboardGestor() {
+  const { toast } = useToast()
+  const [metaErros, setMetaErros] = useState<{ usuarioId?: string; metaContratos?: string }>({})
   const cores = useThemeColors()
   const CORES = chartSeries(cores)
   const [nome, setNome] = useState('')
@@ -84,7 +90,12 @@ export default function DashboardGestor() {
   const [metaForm, setMetaForm] = useState<{usuarioId:string, metaContratos:string}>({usuarioId:'', metaContratos:''})
   const [savingMeta, setSavingMeta] = useState(false)
 
+  // período inválido não é enviado: antes a tela recarregava sem aviso (ou com o período ao contrário)
+  const erroPeriodo = !filtros.inicio || !filtros.fim
+    ? 'Informe a data inicial e a data final do período.'
+    : filtros.inicio > filtros.fim ? 'A data inicial deve ser igual ou anterior à data final.' : null
   const load = async () => {
+    if (erroPeriodo) return
     setLoading(true); setError(null)
     try {
       const res = await dashboardGestorService.getDashboard({
@@ -95,14 +106,15 @@ export default function DashboardGestor() {
       })
       setData(res)
     } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.response?.data || e?.message || 'Erro ao carregar dashboard'
-      setError(typeof msg === 'string' ? msg : JSON.stringify(msg))
+      // antes: exibia o JSON bruto do erro; agora o motivo legível (sem permissão, sem conexão, etc.)
+      setError(textoDoErro(parseApiError(e)))
     } finally { setLoading(false) }
   }
 
   useEffect(() => {
     setNome(authService.getUsuario()?.nome?.split(' ')[0] || '')
-    dashboardGestorService.getEquipe().then(setEquipe).catch(()=>{})
+    dashboardGestorService.getEquipe().then(setEquipe)
+      .catch(e => notificarErro(toast, 'Não foi possível carregar a lista de corretores da equipe', e))
   }, [])
 
   useEffect(() => { load() }, [filtros.inicio, filtros.fim, filtros.corretorId, filtros.origem, filtros.status])
@@ -123,7 +135,13 @@ export default function DashboardGestor() {
   }, [data, sortRanking])
 
   const handleSalvarMeta = async () => {
-    if (!metaForm.usuarioId || !metaForm.metaContratos) return
+    // validação antes de enviar: antes o botão simplesmente não fazia nada com campos vazios
+    const erros: { usuarioId?: string; metaContratos?: string } = {}
+    if (!metaForm.usuarioId) erros.usuarioId = 'Selecione o corretor.'
+    if (metaForm.metaContratos === '') erros.metaContratos = 'Informe a quantidade de contratos.'
+    else if (Number(metaForm.metaContratos) < 0 || !Number.isInteger(Number(metaForm.metaContratos))) erros.metaContratos = 'Informe um número inteiro igual ou maior que zero.'
+    setMetaErros(erros)
+    if (Object.keys(erros).length) return
     setSavingMeta(true)
     try {
       const mesRef = filtros.inicio.slice(0,7)+'-01'
@@ -132,10 +150,15 @@ export default function DashboardGestor() {
         mesReferencia: mesRef,
         metaContratos: Number(metaForm.metaContratos)
       })
+      const corretor = equipe.find(u => String(u.id) === metaForm.usuarioId)?.nome ?? 'o corretor'
+      const qtd = Number(metaForm.metaContratos)
+      toast(`Meta de ${qtd} ${qtd === 1 ? 'contrato' : 'contratos'} definida para ${corretor} em ${format(new Date(mesRef + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })}.`, 'success')
       setMetaForm({usuarioId:'', metaContratos:''})
       load()
     } catch (e:any) {
-      alert(e?.response?.data || 'Erro ao salvar meta')
+      // antes: alert() com o objeto de erro ("[object Object]")
+      const p = notificarErro(toast, 'Não foi possível salvar a meta', e)
+      if (p.fields) setMetaErros({ usuarioId: p.fields.usuarioId, metaContratos: p.fields.metaContratos })
     } finally { setSavingMeta(false) }
   }
 
@@ -145,7 +168,7 @@ export default function DashboardGestor() {
         <header className="bg-sidebar border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 lg:px-8 py-7">
             <h1 className="text-3xl font-bold text-white">Dashboard do Gestor</h1>
-            <p className="text-sidebar-fg/70 mt-1">Carregando...</p>
+            <p className="text-sidebar-fg/70 mt-1" role="status">Carregando indicadores da equipe...</p>
           </div>
         </header>
         <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -163,14 +186,8 @@ export default function DashboardGestor() {
             <h1 className="text-3xl font-bold text-white">Dashboard do Gestor</h1>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12 text-center">
-          <div className="bg-card border border-line rounded-card shadow-card p-10">
-            <AlertTriangle className="mx-auto text-accent mb-3" size={32}/>
-            <p className="text-ink font-semibold">Erro ao carregar dados</p>
-            <p className="text-sm text-muted mt-1 break-all">{error}</p>
-            <p className="text-xs text-muted mt-3">Verifique se o backend está em execução e seu usuário tem papel <b>gestor</b> ou <b>admin</b>. Endereço esperado: <code>GET /dashboard/gestor</code></p>
-            <button onClick={load} className="mt-6 px-6 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover">Tentar novamente</button>
-          </div>
+        <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
+          <ErrorState message="Não foi possível carregar o Dashboard do Gestor." details={error} onRetry={load} />
         </main>
       </div>
     )
@@ -194,14 +211,20 @@ export default function DashboardGestor() {
               <p className="text-sidebar-fg/80 mt-1 text-sm">Olá, {nome} — {periodoLabel} • {equipe.length} corretor(es) na sua equipe</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <input type="date" value={filtros.inicio} onChange={e=>setFiltros(f=>({...f, inicio:e.target.value}))} className="px-3 py-2 rounded-btn border border-line text-sm bg-card text-ink" />
-              <span className="text-sidebar-fg">—</span>
-              <input type="date" value={filtros.fim} onChange={e=>setFiltros(f=>({...f, fim:e.target.value}))} className="px-3 py-2 rounded-btn border border-line text-sm bg-card text-ink" />
+              <input type="date" aria-label="Data inicial do período" aria-invalid={!!erroPeriodo || undefined} aria-describedby={erroPeriodo ? 'periodo-erro' : undefined} value={filtros.inicio} onChange={e=>setFiltros(f=>({...f, inicio:e.target.value}))} className={`px-3 py-2 rounded-btn border text-sm bg-card text-ink ${erroPeriodo ? 'border-danger' : 'border-line'}`} />
+              <span className="text-sidebar-fg" aria-hidden="true">—</span>
+              <input type="date" aria-label="Data final do período" aria-invalid={!!erroPeriodo || undefined} aria-describedby={erroPeriodo ? 'periodo-erro' : undefined} value={filtros.fim} onChange={e=>setFiltros(f=>({...f, fim:e.target.value}))} className={`px-3 py-2 rounded-btn border text-sm bg-card text-ink ${erroPeriodo ? 'border-danger' : 'border-line'}`} />
               <button onClick={load} disabled={loading} className="w-9 h-9 rounded-btn bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/20">
                 <RefreshCw size={18} className={loading?'animate-spin':''}/>
               </button>
             </div>
           </div>
+
+          {erroPeriodo && (
+            <p id="periodo-erro" role="alert" className="mt-3 inline-flex items-center gap-1.5 text-sm bg-danger-bg text-danger border border-danger-border px-3 py-1.5 rounded-btn">
+              {erroPeriodo} Os indicadores abaixo continuam com o último período válido.
+            </p>
+          )}
 
           {/* filtros */}
           <div className="mt-6 flex flex-wrap gap-3">
@@ -386,16 +409,22 @@ export default function DashboardGestor() {
           <div className="mt-6 p-4 bg-surface border border-line rounded-card">
             <p className="text-sm font-semibold text-ink mb-3">Cadastrar / atualizar meta do mês</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <select value={metaForm.usuarioId} onChange={e=>setMetaForm(f=>({...f, usuarioId:e.target.value}))} className="px-3 py-2 rounded-btn border border-line bg-card text-sm text-ink">
-                <option value="">Corretor</option>
-                {equipe.map(u=> <option key={u.id} value={u.id}>{u.nome}</option>)}
-              </select>
-              <input placeholder="Meta contratos (ex 5)" type="number" value={metaForm.metaContratos} onChange={e=>setMetaForm(f=>({...f, metaContratos:e.target.value}))} className="px-3 py-2 rounded-btn border border-line bg-card text-sm text-ink" />
+              <div>
+                <select aria-label="Corretor" aria-invalid={!!metaErros.usuarioId} value={metaForm.usuarioId} onChange={e=>{ setMetaForm(f=>({...f, usuarioId:e.target.value})); setMetaErros(x=>({...x, usuarioId: undefined})) }} className={`w-full px-3 py-2 rounded-btn border bg-card text-sm text-ink ${metaErros.usuarioId ? 'border-danger' : 'border-line'}`}>
+                  <option value="">Selecione o corretor</option>
+                  {equipe.map(u=> <option key={u.id} value={u.id}>{u.nome}</option>)}
+                </select>
+                <InlineError message={metaErros.usuarioId} />
+              </div>
+              <div>
+                <input aria-label="Meta de contratos" aria-invalid={!!metaErros.metaContratos} placeholder="Meta de contratos (ex.: 5)" type="number" min={0} value={metaForm.metaContratos} onChange={e=>{ setMetaForm(f=>({...f, metaContratos:e.target.value})); setMetaErros(x=>({...x, metaContratos: undefined})) }} className={`w-full px-3 py-2 rounded-btn border bg-card text-sm text-ink ${metaErros.metaContratos ? 'border-danger' : 'border-line'}`} />
+                <InlineError message={metaErros.metaContratos} />
+              </div>
               <button onClick={handleSalvarMeta} disabled={savingMeta} className="px-4 py-2 rounded-btn bg-brand text-on-brand font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-50">
-                {savingMeta?'Salvando...':'Salvar meta'}
+                {savingMeta?'Salvando meta...':'Salvar meta'}
               </button>
             </div>
-            <p className="text-xs text-muted mt-2">Se já existir meta para o corretor no mês, será atualizada. Mês = {filtros.inicio.slice(0,7)}</p>
+            <p className="text-xs text-muted mt-2">A meta vale para {(() => { try { return format(new Date(filtros.inicio + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR }) } catch { return filtros.inicio.slice(0,7) } })()}. Se o corretor já tiver meta definida pelo gestor neste mês, ela será substituída.</p>
           </div>
         </div>
 

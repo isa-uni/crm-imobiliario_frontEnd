@@ -5,6 +5,7 @@ import { empreendimentoIaService, EmpreendimentoCard } from "@/service/empreendi
 import EmpreendimentoCardComp from "@/components/empreendimento/EmpreendimentoCard"
 import EmpreendimentoUploadModal from "@/components/empreendimento/EmpreendimentoUploadModal"
 import { parseApiError } from "@/lib/errorHandler"
+import { textoDoErro } from "@/lib/feedback"
 import { ErrorState } from "@/components/ui/ErrorState"
 
 export default function EmpreendimentosPage() {
@@ -26,7 +27,7 @@ export default function EmpreendimentosPage() {
       setTotalPages(res.totalPages ?? 1)
       setTotalElements(res.totalElements ?? content.length)
     } catch (e:any) {
-      setError(parseApiError(e).message)
+      setError(textoDoErro(parseApiError(e)))
     } finally { setLoading(false) }
   }
 
@@ -64,7 +65,7 @@ export default function EmpreendimentosPage() {
         {loading ? (
           <div className="bg-card border border-line rounded-card p-12 text-center text-muted animate-pulse">Carregando empreendimentos...</div>
         ) : error ? (
-          <ErrorState message={error} onRetry={()=>load(page)} />
+          <ErrorState message="Não foi possível carregar os empreendimentos." details={error} onRetry={()=>load(page)} />
         ) : cards.length===0 ? (
           <div className="bg-card border border-line rounded-card p-12 text-center">
             <Building2 size={48} className="mx-auto text-muted mb-3"/>

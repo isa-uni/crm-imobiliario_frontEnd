@@ -6,7 +6,8 @@ import { X } from 'lucide-react';
 interface PapelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (papel: string) => Promise<boolean>;
+  /** Retorna null em caso de sucesso ou o motivo do erro (ex.: "Já existe um papel com este nome."). */
+  onSave: (papel: string) => Promise<string | null>;
 }
 
 export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps) {
@@ -20,20 +21,30 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
     e.preventDefault();
     setError(null);
 
-    if (!papel.trim()) {
+    const nome = papel.trim();
+    if (!nome) {
       setError('Informe o nome do papel.');
+      return;
+    }
+    if (nome.length < 2 || nome.length > 50) {
+      setError('O nome do papel deve ter entre 2 e 50 caracteres.');
+      return;
+    }
+    if (!/^[a-zà-ú0-9 _-]+$/i.test(nome)) {
+      setError('O nome do papel pode conter apenas letras, números, espaço, hífen e sublinhado.');
       return;
     }
 
     setLoading(true);
-    const sucesso = await onSave(papel.trim().toLowerCase());
+    const erro = await onSave(papel.trim().toLowerCase());
     setLoading(false);
 
-    if (sucesso) {
+    if (erro == null) {
       setPapel('');
       onClose();
     } else {
-      setError('Não foi possível criar o papel.');
+      // motivo real vindo do backend (antes: sempre "Não foi possível criar o papel.")
+      setError(erro);
     }
   };
 
@@ -44,26 +55,30 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
           <h2 className="text-xl font-bold text-ink">Novo Papel</h2>
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="p-2 rounded-lg hover:bg-surface"
           >
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+            <label htmlFor="papel-nome" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
               Nome do papel <span className="text-danger">*</span>
             </label>
             <input
+              id="papel-nome"
               type="text"
-              required
+              maxLength={50}
               value={papel}
-              onChange={(e) => setPapel(e.target.value)}
-              className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
+              aria-invalid={!!error}
+              aria-describedby={error ? 'papel-nome-erro' : undefined}
+              onChange={(e) => { setPapel(e.target.value); setError(null); }}
+              className={`w-full p-2.5 border ${error ? 'border-danger' : 'border-line'} rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30`}
               placeholder="ex.: gerente, recepcionista"
             />
-            {error && <p className="text-danger text-sm mt-1">{error}</p>}
+            {error && <p id="papel-nome-erro" role="alert" className="text-danger text-sm mt-1">{error}</p>}
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -79,7 +94,7 @@ export default function PapelModal({ isOpen, onClose, onSave }: PapelModalProps)
               disabled={loading}
               className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover disabled:opacity-60 transition-colors"
             >
-              {loading ? 'Criando...' : 'Criar Papel'}
+              {loading ? 'Criando papel...' : 'Criar papel'}
             </button>
           </div>
         </form>

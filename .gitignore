@@ -35,3 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+# build de instâncias auxiliares (NEXT_DIST_DIR)
+/.next-*/

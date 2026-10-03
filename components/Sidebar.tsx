@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { authService } from '@/service/authService';
 import type { UsuarioAutenticado } from '@/types';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { podeVerNoMenu } from '@/lib/acesso';
+import NotificacoesSino from '@/components/NotificacoesSino';
 import {
   Home,
   Users,
@@ -18,7 +20,6 @@ import {
   X,
   Building2,
   TrendingUp,
-  Bell,
   AlertTriangle,
   type LucideIcon,
 } from 'lucide-react';
@@ -32,33 +33,27 @@ interface MenuItem {
   label: string;
   icon: LucideIcon;
   path: string;
-  adminOnly?: boolean;
-  gestorOnly?: boolean;
-  corretorOnly?: boolean;
 }
 
 const MENU_ITEMS: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
-  { id: 'dashboard-gestor', label: 'Dashboard Gestor', icon: BarChart3, path: '/dashboard/gestor', gestorOnly: true },
+  { id: 'dashboard-gestor', label: 'Dashboard Gestor', icon: BarChart3, path: '/dashboard/gestor' },
   { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },
   { id: 'relogio-vendas', label: 'Relógio de Vendas', icon: TrendingUp, path: '/relogio-vendas' },
-  { id: 'leads-exportar', label: 'Exportar Leads', icon: FileText, path: '/leads/exportar', corretorOnly: true },
+  { id: 'leads-exportar', label: 'Exportar Leads', icon: FileText, path: '/leads/exportar' },
   { id: 'properties', label: 'Imóveis', icon: Building2, path: '/properties' },
   { id: 'empreendimentos', label: 'Empreendimentos', icon: Building2, path: '/empreendimentos' },
-  { id: 'equipes', label: 'Equipes', icon: Building2, path: '/equipes', adminOnly: true },
-  { id: 'redistribuicao', label: 'Redistribuição', icon: AlertTriangle, path: '/redistribuicao', gestorOnly: true },
-  { id: 'usuarios', label: 'Usuários', icon: UserCog, path: '/usuarios', adminOnly: true },
-  { id: 'notificacoes', label: 'Notificações', icon: Bell, path: '/notificacoes' },
+  { id: 'equipes', label: 'Equipes', icon: Building2, path: '/equipes' },
+  { id: 'redistribuicao', label: 'Redistribuição', icon: AlertTriangle, path: '/redistribuicao' },
+  { id: 'usuarios', label: 'Usuários', icon: UserCog, path: '/usuarios' },
   { id: 'perfil', label: 'Meu Perfil', icon: User, path: '/perfil' },
 ];
 
 const NOMES_PAPEL: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor', gestor: 'Gestor' };
 
+// visibilidade por papel vem de lib/acesso.ts (mesma regra da guarda de rotas do RouteShell)
 function podeVer(item: MenuItem, papel?: string) {
-  if (item.adminOnly && papel !== 'admin') return false;
-  if (item.gestorOnly && !['admin', 'gestor'].includes(papel || '')) return false;
-  if (item.corretorOnly && papel !== 'corretor') return false;
-  return true;
+  return podeVerNoMenu(item.path, papel);
 }
 
 export default function Sidebar({ children }: SidebarProps) {
@@ -121,10 +116,16 @@ export default function Sidebar({ children }: SidebarProps) {
 
         {/* User info */}
         <div className="shrink-0 px-4 py-4 border-b border-white/10">
-          <p className="text-sm font-semibold text-white truncate">
-            {usuario?.nome || 'Usuário'}
-          </p>
-          <p className="text-xs text-sidebar-fg/70 truncate">{usuario?.email || ''}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
+                {usuario?.nome || 'Usuário'}
+              </p>
+              <p className="text-xs text-sidebar-fg/70 truncate">{usuario?.email || ''}</p>
+            </div>
+            {/* notificações ficam sempre à mão, sem tela própria */}
+            <NotificacoesSino ocultarGatilhoMovel={isOpen} />
+          </div>
           {usuario?.papel && (
             <span className="mt-2 inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-accent text-on-accent">
               {NOMES_PAPEL[usuario.papel] || usuario.papel}

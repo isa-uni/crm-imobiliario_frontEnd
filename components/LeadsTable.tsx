@@ -18,6 +18,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatarTelefone } from '@/lib/format';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -33,7 +34,7 @@ interface LeadsTableProps {
   onStatusFilterChange: (v: string) => void;
 }
 
-const STATUS_CONFIG: Record<Lead['status'], { label: string; color: string }> = {
+export const STATUS_CONFIG: Record<Lead['status'], { label: string; color: string }> = {
   'lead': { label: 'Lead', color: 'bg-subtle text-muted' },
   'oportunidade': { label: 'Oportunidade', color: 'bg-info-bg text-brand-fg' },
   'visita-agendada': { label: 'Visita Agendada', color: 'bg-warning-bg text-warning' },
@@ -60,6 +61,7 @@ export default function LeadsTable({
   statusFilter,
   onStatusFilterChange,
 }: LeadsTableProps) {
+  const confirmar = useConfirm();
   const safeLeads = Array.isArray(leads) ? leads : [];
 
   const trocarFiltro = (filtro: string) => {
@@ -142,14 +144,20 @@ export default function LeadsTable({
                       <td className="px-4 py-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm text-ink"><Phone size={14} className="text-muted" />{formatarTelefone(lead.telefone)}</div>
-                          <div className="flex items-center gap-2 text-sm text-muted"><Mail size={14} className="text-muted" />{lead.email}</div>
+                          <div className="flex items-center gap-2 text-sm text-muted"><Mail size={14} className="text-muted" aria-hidden="true" />{lead.email || <span className="italic">Sem e-mail</span>}</div>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <select value={lead.status} onChange={(e) => {
                             const newStatus = e.target.value as Lead['status']
                             if (newStatus === 'descarte') {
-                              if (confirm('Tem certeza que deseja descartar este lead?')) onEdit({ ...lead, status: newStatus });
+                              // o descarte exige motivo (LeadsService): abre o formulário com o status já marcado
+                              confirmar({
+                                titulo: `Descartar o lead ${lead.nome}?`,
+                                mensagem: 'Na próxima etapa você informará o motivo do descarte. O lead só será descartado quando você salvar o formulário.',
+                                confirmarLabel: 'Continuar',
+                                perigo: true,
+                              }).then(ok => { if (ok) onEdit({ ...lead, status: newStatus }); });
                             } else onStatusChange(lead.id, newStatus);
                           }} className={`px-3 py-1 text-xs font-bold border-0 cursor-pointer rounded-full ${status.color}`}>
                           <option value="lead">Lead</option><option value="oportunidade">Oportunidade</option><option value="visita-agendada">Visita Agendada</option><option value="visita-realizada">Visita Realizada</option><option value="pasta">Pasta</option><option value="aprovado">Aprovado</option><option value="contrato">Contrato</option><option value="descarte">Descarte</option>
@@ -189,14 +197,14 @@ export default function LeadsTable({
                   </div>
                   <div className="text-sm text-muted space-y-1">
                     <div className="flex items-center gap-2"><Phone size={14} />{formatarTelefone(lead.telefone)}</div>
-                    <div className="flex items-center gap-2"><Mail size={14} />{lead.email}</div>
+                    <div className="flex items-center gap-2"><Mail size={14} aria-hidden="true" />{lead.email || <span className="italic">Sem e-mail</span>}</div>
                     <div className="flex items-center gap-2"><DollarSign size={14} />R$ {(lead.valorInteresse ?? 0).toLocaleString('pt-BR')}</div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted">{format(new Date(lead.dataAtualizacao), 'dd/MM/yy')}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => onView(lead)} className="p-2 rounded-lg text-brand-fg bg-brand-soft"><Eye size={16} /></button>
-                      <button onClick={() => onEdit(lead)} className="p-2 rounded-lg text-muted bg-surface"><Edit size={16} /></button>
+                      <button onClick={() => onView(lead)} aria-label={`Ver detalhes de ${lead.nome}`} className="p-2 rounded-lg text-brand-fg bg-brand-soft"><Eye size={16} aria-hidden="true" /></button>
+                      <button onClick={() => onEdit(lead)} aria-label={`Editar ${lead.nome}`} className="p-2 rounded-lg text-muted bg-surface"><Edit size={16} aria-hidden="true" /></button>
                     </div>
                   </div>
                 </div>

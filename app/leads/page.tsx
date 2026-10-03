@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Lead } from '@/types';
 import { leadService } from '@/service/leadService';
-import LeadsTable from '@/components/LeadsTable';
+import LeadsTable, { STATUS_CONFIG } from '@/components/LeadsTable';
 import LeadModal from '@/components/LeadModal';
 import LeadViewModal from '@/components/LeadViewModal';
 import { Plus, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
+import { notificarErro, textoDoErro } from '@/lib/feedback';
 import { ErrorState } from '@/components/ui/ErrorState';
 
 export default function LeadsPage() {
@@ -26,6 +27,7 @@ export default function LeadsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [resumo, setResumo] = useState<{ total: number; ativos: number; contratos: number; esteMes: number } | null>(null);
 
   // Troca de filtro volta para a página 0 (a tabela chama setPage(0) junto); um único carregamento por mudança
   useEffect(() => {
@@ -49,10 +51,12 @@ export default function LeadsPage() {
       setLeads(safe);
       setTotalPages(data?.totalPages ?? (safe.length ? 1 : 0));
       setTotalElements(data?.totalElements ?? safe.length);
+      // cards de resumo: contados no servidor sobre todos os leads, não só a página visível
+      leadService.getResumo().then(setResumo).catch(() => setResumo(null));
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      setLoadError(parsed.message);
-      toast(parsed.message, 'error');
+      // erro mostrado uma única vez, no lugar da tabela, com o botão "Tentar novamente"
+      // (antes aparecia também um toast com a mesma mensagem)
+      setLoadError(textoDoErro(parseApiError(e)));
     } finally {
       setLoading(false);
     }
@@ -81,16 +85,18 @@ export default function LeadsPage() {
       }
       setEditingLead(null);
       setIsModalOpen(false);
-      toast(editingLead ? 'Lead atualizado com sucesso.' : 'Lead cadastrado com sucesso.', 'success');
+      toast(editingLead
+        ? (leadData.status === 'descarte' && editingLead.status !== 'descarte'
+            ? `Lead ${leadData.nome} descartado.`
+            : `Dados do lead ${leadData.nome} atualizados com sucesso.`)
+        : `Lead ${leadData.nome} cadastrado com sucesso.`, 'success');
       return true;
     } catch (error: any) {
       const parsed = parseApiError(error);
-      if (parsed.fields) {
-        setErrors(parsed.fields);
-        toast('Existem campos inválidos. Verifique os campos destacados.', 'warning');
-      } else {
-        toast(parsed.message, 'error');
-      }
+      if (parsed.tipo === 'sessao_expirada') return false;
+      // erro de campo aparece junto ao campo no formulário; os demais no topo do formulário
+      // (antes: toast genérico "Existem campos inválidos" sem dizer qual)
+      setErrors(parsed.fields && Object.keys(parsed.fields).length ? parsed.fields : { geral: textoDoErro(parsed) });
       return false;
     }
   };
@@ -107,12 +113,14 @@ export default function LeadsPage() {
   };
 
   const handleStatusChange = async (id: number, newStatus: Lead['status']) => {
+    const nome = leads.find(l => l.id === id)?.nome ?? 'o lead';
+    const rotulo = STATUS_CONFIG[newStatus]?.label ?? newStatus;
     try {
       await leadService.atualizar(id, { status: newStatus });
       await loadData(page);
-      toast('Status atualizado com sucesso.', 'success');
+      toast(`Status de ${nome} alterado para "${rotulo}".`, 'success');
     } catch (e: any) {
-      toast(parseApiError(e).message, 'error');
+      notificarErro(toast, `Não foi possível alterar o status de ${nome}`, e);
     }
   };
 
@@ -144,34 +152,23 @@ export default function LeadsPage() {
             </button>
           </div>
 
-          {/* Stats Cards - usam totalElements para refletir base server-side */}
+          {/* Stats Cards - contadores calculados no servidor (GET /leads/resumo) sobre todos os leads do escopo */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Total de Leads</p>
-              <p className="text-3xl font-bold text-ink">{totalElements}</p>
+              <p className="text-3xl font-bold text-ink">{resumo?.total ?? '—'}</p>
             </div>
             <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Ativos</p>
-              <p className="text-3xl font-bold text-ink">
-                {Array.isArray(leads) ? leads.filter(l => l.status !== 'contrato' && l.status !== 'descarte').length : 0}
-              </p>
+              <p className="text-3xl font-bold text-ink">{resumo?.ativos ?? '—'}</p>
             </div>
             <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Contrato</p>
-              <p className="text-3xl font-bold text-success">
-                {Array.isArray(leads) ? leads.filter(l => l.status === 'contrato').length : 0}
-              </p>
+              <p className="text-3xl font-bold text-success">{resumo?.contratos ?? '—'}</p>
             </div>
             <div className="bg-card p-5 border border-line rounded-card shadow-card">
               <p className="text-sm text-muted mb-1">Este Mês</p>
-              <p className="text-3xl font-bold text-ink">
-                {Array.isArray(leads) ? leads.filter(l => {
-                  const leadDate = new Date(l.dataCriacao);
-                  const now = new Date();
-                  return leadDate.getMonth() === now.getMonth() && 
-                         leadDate.getFullYear() === now.getFullYear();
-                }).length : 0}
-              </p>
+              <p className="text-3xl font-bold text-ink">{resumo?.esteMes ?? '—'}</p>
             </div>
           </div>
         </div>
@@ -179,10 +176,10 @@ export default function LeadsPage() {
         {/* Tabela */}
         {loading ? (
           <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
-            <p className="text-muted animate-pulse">Carregando leads...</p>
+            <p className="text-muted motion-safe:animate-pulse" role="status">Carregando leads...</p>
           </div>
         ) : loadError ? (
-          <ErrorState message={loadError} onRetry={() => loadData(page)} />
+          <ErrorState message="Não foi possível carregar os leads." details={loadError} onRetry={() => loadData(page)} />
         ) : (
           <LeadsTable
             leads={Array.isArray(leads) ? leads : []}

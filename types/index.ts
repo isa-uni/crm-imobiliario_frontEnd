@@ -24,7 +24,11 @@ export interface Equipe {
 export interface Notificacao {
   id: number
   tipo: string
+  /** resumo do que aconteceu (ex.: "3 leads aguardando redistribuição") */
+  titulo?: string | null
   mensagem: string
+  /** tela onde está a ação esperada (ex.: /redistribuicao) */
+  link?: string | null
   leadId?: number
   leadNome?: string
   lida: boolean
@@ -111,8 +115,8 @@ export interface UsuarioAutenticado {
   trocarSenha: boolean;
 }
 
+// o token de acesso vai apenas em cookie httpOnly (Set-Cookie), nunca no corpo da resposta
 export interface LoginResponse {
-  token: string;
   usuario: UsuarioAutenticado;
 }
 

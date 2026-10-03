@@ -6,7 +6,7 @@ import { leadService } from '@/service/leadService';
 import { origemOptions } from '@/service/origemOptions';
 import { historicoOptions } from '@/service/historicoOptions';
 import { useToast } from '@/components/ui/ToastProvider';
-import { parseApiError } from '@/lib/errorHandler';
+import { notificarErroAsync } from '@/lib/feedback';
 
 const inputClass = "w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30";
 
@@ -32,15 +32,17 @@ export default function ExportarLeadsPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `leads_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const nomeArquivo = `leads_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      link.download = nomeArquivo;
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast('Exportação gerada com sucesso.', 'success');
+      toast(`Planilha "${nomeArquivo}" gerada. Confira a pasta de downloads do navegador.`, 'success');
     } catch (e: any) {
-      toast(parseApiError(e).message, 'error');
+      // o erro de um download chega como arquivo (Blob): é lido para mostrar o motivo real
+      await notificarErroAsync(toast, 'Não foi possível gerar a planilha de leads', e);
     } finally {
       setLoading(false);
     }
@@ -125,7 +127,7 @@ export default function ExportarLeadsPage() {
               className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={18} />
-              {loading ? 'Gerando...' : 'Exportar Excel'}
+              {loading ? 'Gerando planilha...' : 'Exportar Excel'}
             </button>
             <p className="text-xs text-muted mt-2">
               O arquivo inclui a lista de leads filtrada, o funil de vendas, a origem dos leads e o histórico (novo/reaquecido/vencido).

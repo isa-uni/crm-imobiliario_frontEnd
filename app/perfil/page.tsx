@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Phone, Hash, Shield, Cake, Loader2, KeyRound, CheckCircle } from 'lucide-react';
 import InputMask from 'react-input-mask';
@@ -9,15 +9,21 @@ import { usuarioService } from '@/service/usuarioService';
 import type { Usuario } from '@/types';
 import { ThemeSelector } from '@/components/ui/ThemeToggle';
 import { formatarTelefoneInput } from '@/lib/format';
+import { parseApiError } from '@/lib/errorHandler';
+import { textoDoErro } from '@/lib/feedback';
+import { InlineError } from '@/components/ui/ErrorState';
+import { useValidacao, classeErro } from '@/hooks/useValidacao';
+import { campo, mascaraTelefone, problemaDataNascimento, problemaEmail, problemaNome, problemaTelefone, somenteDigitos, type Regras } from '@/lib/validacao';
+
+type FormPerfil = { nome: string; email: string; genero: string; telefone: string; dataNascimento: string };
 
 
-const inputClass =
-  'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30';
+const inputClass = 'w-full p-2.5 border rounded-btn focus:outline-none focus:ring-4';
 
 export default function PerfilPage() {
   const router = useRouter();
   const [user, setUser] = useState<Usuario | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormPerfil>({
     nome: '',
     email: '',
     genero: 'M',
@@ -28,6 +34,22 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  // mesmas regras e mensagens do backend (PerfilDTO)
+  const regras = useMemo<Regras<FormPerfil>>(() => ({
+    nome: campo('Informe o seu nome.', problemaNome),
+    email: campo('Informe o seu e-mail.', problemaEmail),
+    genero: campo('Selecione o gênero.'),
+    telefone: campo('Informe o seu telefone.', problemaTelefone),
+    dataNascimento: campo('Informe a data de nascimento.', problemaDataNascimento),
+  }), []);
+  const v = useValidacao<FormPerfil>(regras);
+  const alterar = (nome: keyof FormPerfil, valor: string) => {
+    const novo = { ...form, [nome]: valor };
+    setForm(novo);
+    setSuccess(false);
+    v.aoAlterar(nome, novo);
+  };
+  const cls = (nome: string, extra = '') => `${inputClass} ${classeErro(!!v.erros[nome])} ${extra}`;
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -53,7 +75,7 @@ export default function PerfilPage() {
       if (err.response?.status === 401) {
         router.replace('/login');
       } else {
-        setError('Não foi possível carregar seus dados. Tente novamente.');
+        setError(`Não foi possível carregar seus dados. ${textoDoErro(parseApiError(err))}`);
       }
     } finally {
       setLoading(false);
@@ -65,28 +87,9 @@ export default function PerfilPage() {
     setError(null);
     setSuccess(false);
 
-    if (!form.nome.trim()) {
-      setError('Informe o nome.');
-      return;
-    }
-    if (!form.email.trim()) {
-      setError('Informe o e-mail.');
-      return;
-    }
-    if (!form.telefone.trim()) {
-      setError('Informe o telefone.');
-      return;
-    }
-
-    const telefoneDigitos = form.telefone.replace(/\D/g, '');
-    if (telefoneDigitos.length < 10 || telefoneDigitos.length > 11) {
-      setError('Informe um telefone completo (DDD + número, 10 ou 11 dígitos).');
-      return;
-    }
-    if (!form.dataNascimento) {
-      setError('Informe a data de nascimento.');
-      return;
-    }
+    // antes: um único aviso no topo, um campo por vez; agora todos os campos com problema ficam destacados
+    if (!v.validarTudo(form)) return;
+    const telefoneDigitos = somenteDigitos(form.telefone);
 
     setSaving(true);
     try {
@@ -102,17 +105,10 @@ export default function PerfilPage() {
       authService.atualizarUsuarioLocal({ nome: atualizado.nome, email: atualizado.email });
       setSuccess(true);
     } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Sua sessão expirou. Faça login novamente.');
-      } else if (typeof err.response?.data === 'string') {
-        setError(err.response.data);
-      } else if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else if (err.response?.data?.errors?.length) {
-        setError(err.response.data.errors.map((x: any) => x.message).join('. '));
-      } else {
-        setError('Não foi possível salvar. Tente novamente.');
-      }
+      // motivo real vindo do backend (ex.: "Já existe um usuário cadastrado com este e-mail.")
+      const p = parseApiError(err);
+      if (p.fields && Object.keys(p.fields).length) v.aplicarErrosServidor(p.fields);
+      else setError(`Não foi possível salvar seus dados. ${textoDoErro(p)}`);
     } finally {
       setSaving(false);
     }
@@ -203,6 +199,7 @@ export default function PerfilPage() {
 
             {/* Formulário de dados pessoais */}
             <form
+              ref={v.formRef as any}
               onSubmit={handleSubmit}
               className="bg-card border border-line rounded-card shadow-card p-6"
               noValidate
@@ -224,110 +221,119 @@ export default function PerfilPage() {
                   role="status"
                   className="bg-success-bg border border-success-border px-4 py-3 text-sm text-success rounded-btn mb-5 flex items-center gap-2"
                 >
-                  <CheckCircle size={18} />
-                  Dados atualizados com sucesso!
+                  <CheckCircle size={18} aria-hidden="true" />
+                  Seus dados foram atualizados com sucesso.
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <label htmlFor="nome" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                     Nome <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                     <input
+                      id="nome"
                       type="text"
+                      autoComplete="name"
+                      maxLength={255}
                       value={form.nome}
-                      onChange={(e) => {
-                        setForm({ ...form, nome: e.target.value });
-                        setSuccess(false);
-                      }}
-                      className={`${inputClass} pl-10`}
+                      onChange={(e) => alterar('nome', e.target.value)}
+                      {...v.ligar('nome', form)}
+                      className={cls('nome', 'pl-10')}
                       placeholder="Seu nome completo"
                     />
                   </div>
+                  <InlineError id="nome-erro" message={v.erros.nome} />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <label htmlFor="email" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                     E-mail <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                     <input
+                      id="email"
                       type="email"
+                      autoComplete="email"
+                      maxLength={255}
                       value={form.email}
-                      onChange={(e) => {
-                        setForm({ ...form, email: e.target.value });
-                        setSuccess(false);
-                      }}
-                      className={`${inputClass} pl-10`}
-                      placeholder="voce@email.com"
+                      onChange={(e) => alterar('email', e.target.value)}
+                      {...v.ligar('email', form)}
+                      className={cls('email', 'pl-10')}
+                      placeholder="voce@empresa.com"
                     />
                   </div>
+                  <InlineError id="email-erro" message={v.erros.email} />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <label htmlFor="genero" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                     Gênero <span className="text-danger">*</span>
                   </label>
                   <select
+                    id="genero"
                     value={form.genero}
-                    onChange={(e) => {
-                      setForm({ ...form, genero: e.target.value });
-                      setSuccess(false);
-                    }}
-                    className={inputClass}
+                    onChange={(e) => alterar('genero', e.target.value)}
+                    {...v.ligar('genero', form)}
+                    className={cls('genero')}
                   >
                     <option value="M">Masculino</option>
                     <option value="F">Feminino</option>
                     <option value="O">Outro</option>
                   </select>
+                  <InlineError id="genero-erro" message={v.erros.genero} />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <label htmlFor="telefone" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                     Telefone <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                     <InputMask
-                      mask="(99) 99999-9999"
+                      mask={mascaraTelefone(form.telefone)}
                       value={form.telefone}
-                      onChange={(e) => {
-                        setForm({ ...form, telefone: e.target.value });
-                        setSuccess(false);
-                      }}
+                      onChange={(e) => alterar('telefone', e.target.value)}
+                      onBlur={v.ligar('telefone', form).onBlur}
                     >
                       {(inputProps: any) => (
                         <input
                           {...inputProps}
+                          id="telefone"
+                          name="telefone"
                           type="tel"
-                          className={`${inputClass} pl-10`}
-                          placeholder="(11) 98765-4321"
+                          autoComplete="tel"
+                          aria-invalid={!!v.erros.telefone || undefined}
+                          aria-describedby={v.erros.telefone ? 'telefone-erro' : undefined}
+                          className={cls('telefone', 'pl-10')}
+                          placeholder="(43) 99999-9999"
                         />
                       )}
                     </InputMask>
                   </div>
+                  <InlineError id="telefone-erro" message={v.erros.telefone} />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <label htmlFor="dataNascimento" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
                     Data de nascimento <span className="text-danger">*</span>
                   </label>
                   <div className="relative">
                     <Cake size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                     <input
+                      id="dataNascimento"
                       type="date"
+                      min="1900-01-01"
                       value={form.dataNascimento}
-                      onChange={(e) => {
-                        setForm({ ...form, dataNascimento: e.target.value });
-                        setSuccess(false);
-                      }}
-                      className={`${inputClass} pl-10`}
+                      onChange={(e) => alterar('dataNascimento', e.target.value)}
+                      {...v.ligar('dataNascimento', form)}
+                      className={cls('dataNascimento', 'pl-10')}
                     />
                   </div>
+                  <InlineError id="dataNascimento-erro" message={v.erros.dataNascimento} />
                 </div>
               </div>
 
@@ -347,7 +353,7 @@ export default function PerfilPage() {
                   {saving ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Salvando...
+                      Salvando dados...
                     </>
                   ) : (
                     'Salvar alterações'

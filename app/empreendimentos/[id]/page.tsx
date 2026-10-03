@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react"
 import { empreendimentoIaService, EmpreendimentoDetalhe } from "@/service/empreendimentoIaService"
 import { parseApiError } from "@/lib/errorHandler"
+import { textoDoErro } from "@/lib/feedback"
 import { ErrorState } from "@/components/ui/ErrorState"
 import { Badge } from "@/components/ui/Badge"
 import { brl, m2, faixa, dataCurta } from "@/lib/format"
@@ -54,12 +55,12 @@ export default function EmpreendimentoDetalhePage({ params }: { params: { id: st
     try {
       const data = await empreendimentoIaService.detalhe(id)
       setEmp(data)
-    } catch (e: any) { setError(parseApiError(e).message) } finally { setLoading(false) }
+    } catch (e: any) { setError(textoDoErro(parseApiError(e))) } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [id])
 
   if (loading) return <div className="min-h-screen bg-surface p-12 text-center text-muted animate-pulse">Carregando empreendimento...</div>
-  if (error) return <div className="min-h-screen bg-surface p-8 max-w-2xl mx-auto"><ErrorState message={error} onRetry={load} /></div>
+  if (error) return <div className="min-h-screen bg-surface p-8 max-w-2xl mx-auto"><ErrorState message="Não foi possível carregar o empreendimento." details={error} onRetry={load} /></div>
   if (!emp) return null
 
   const resumo = emp.unidadesResumo

@@ -34,25 +34,28 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[50vh] flex items-center justify-center p-8">
+        <div role="alert" className="min-h-[50vh] flex items-center justify-center p-4 sm:p-8">
           <div className="bg-card border border-line rounded-card shadow-card p-8 max-w-lg w-full text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
-              <AlertTriangle size={28} />
+              <AlertTriangle size={28} aria-hidden="true" />
             </div>
-            <h2 className="text-lg font-bold text-ink">Ocorreu um erro inesperado</h2>
+            <h2 className="text-lg font-bold text-ink">Não foi possível exibir esta tela</h2>
             <p className="text-sm text-muted mt-2">
-              Não foi possível carregar esta seção. Tente novamente. Se o problema persistir, contate o suporte.
+              Ocorreu um erro inesperado ao montar esta parte do sistema. Tente novamente; se o problema persistir,
+              recarregue a página ou informe ao suporte em qual tela isso aconteceu.
             </p>
-            {this.state.error && (
-              <p className="text-xs text-muted mt-2 break-all bg-surface p-2 rounded-btn border border-line">
-                {this.state.error.message}
-              </p>
+            {/* detalhe técnico só em desenvolvimento — nunca para o usuário final */}
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="text-left mt-3">
+                <summary className="text-xs text-muted cursor-pointer">Detalhes técnicos (desenvolvimento)</summary>
+                <p className="text-xs text-muted mt-2 break-all bg-surface p-2 rounded-btn border border-line">{this.state.error.message}</p>
+              </details>
             )}
             <button
               onClick={this.handleReset}
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover"
             >
-              <RefreshCw size={16} /> Tentar novamente
+              <RefreshCw size={16} aria-hidden="true" /> Tentar novamente
             </button>
           </div>
         </div>

@@ -2,8 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, Building2, Loader2, Clock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Building2, Loader2, Clock, CheckCircle, UserX } from 'lucide-react';
 import { authService } from '@/service/authService';
+import { parseApiError } from '@/lib/errorHandler';
+import { textoDoErro } from '@/lib/feedback';
+import { problemaEmail } from '@/lib/validacao';
+
+const AVISOS_LOGIN: Record<string, { tipo: 'sucesso' | 'aviso'; texto: string }> = {
+  inactivity: { tipo: 'aviso', texto: 'Sua sessão foi encerrada após 30 minutos sem atividade. Faça login para continuar.' },
+  expired: { tipo: 'aviso', texto: 'Sua sessão expirou. Faça login para continuar.' },
+  senha: { tipo: 'sucesso', texto: 'Senha alterada com sucesso. Entre com a nova senha.' },
+  logout: { tipo: 'sucesso', texto: 'Você saiu do sistema.' },
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,13 +24,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  // usuário inativado tem um aviso próprio: não é erro de digitação, e tentar de novo não resolve
+  const [inativado, setInativado] = useState<string | null>(null);
   const reason = searchParams.get('reason');
-
-  useEffect(() => {
-    if (reason === 'inactivity') setError('Sua sessão expirou por inatividade (30 min). Faça login novamente.');
-    else if (reason === 'expired') setError('Sua sessão expirou. Faça login novamente.');
-    else if (reason === 'logout') setError(null);
-  }, [reason]);
+  // aviso sobre COMO o usuário chegou ao login (não é erro do formulário — por isso fica separado)
+  const aviso = AVISOS_LOGIN[reason ?? ''];
 
   useEffect(() => {
     if (authService.isAuthenticated()) {
@@ -46,9 +54,18 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInativado(null);
 
     if (!email.trim() || !senha) {
-      setError('Informe seu e-mail e senha para continuar.');
+      setError(!email.trim() && !senha ? 'Informe seu e-mail e sua senha.' : !email.trim() ? 'Informe seu e-mail.' : 'Informe sua senha.');
+      document.getElementById(!email.trim() ? 'email' : 'senha')?.focus();
+      return;
+    }
+    // e-mail mal digitado é avisado aqui, sem gastar uma das tentativas de login
+    const problema = problemaEmail(email);
+    if (problema) {
+      setError(problema);
+      document.getElementById('email')?.focus();
       return;
     }
 
@@ -58,24 +75,19 @@ export default function LoginPage() {
       authService.salvarSessao(response);
       router.push(response.usuario.trocarSenha ? '/trocar-senha' : '/dashboard');
     } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('E-mail ou senha incorretos. Verifique e tente novamente.');
-      } else if (err.response?.status === 403) {
-        setError('Acesso não permitido. Fale com o administrador.');
-      } else if (err.response?.status === 429) {
-        const data = err.response?.data;
-        const headerRetry = err.response?.headers?.['retry-after'] || err.response?.headers?.['Retry-After'];
-        const retry = data?.retryAfter ?? (headerRetry ? parseInt(headerRetry, 10) : null) ?? 300;
-        const msg = data?.message || data?.error || 'Muitas tentativas. Tente novamente em 5 minutos.';
-        const isComposite = msg.includes('e-mail');
-        setError(msg);
+      // usa o motivo enviado pelo backend: senha errada e usuário desativado são casos diferentes
+      // (antes todo 401 virava "E-mail ou senha incorretos", escondendo o usuário desativado)
+      const p = parseApiError(err);
+      if (p.code === 'AUTH_USER_DISABLED') {
+        setInativado(p.message);
+        setSenha('');
+        return;
+      }
+      setError(textoDoErro(p));
+      if (p.tipo === 'muitas_tentativas') {
+        const headerRetry = err.response?.headers?.['retry-after'];
+        const retry = p.details?.retryAfter ?? (headerRetry ? parseInt(headerRetry, 10) : null) ?? 300;
         setRetryAfter(Number.isFinite(retry) ? retry : 300);
-        // dica: bloqueio é por IP:email (5) + IP (20). Outro navegador mesmo IP mas e-mail diferente não será bloqueado.
-        if (!isComposite) {
-          console.warn('[Login] Bloqueio por IP (20 tentativas). Aguarde.', retry);
-        }
-      } else {
-        setError('Não foi possível entrar agora. Tente novamente em instantes.');
       }
     } finally {
       setLoading(false);
@@ -96,9 +108,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {(reason === 'inactivity' || reason === 'expired') && (
-            <div className="mb-4 bg-warning-bg border border-warning-border px-4 py-3 text-sm text-warning rounded-btn flex gap-2 items-center">
-              <Clock size={16}/> Sessão encerrada. Faça login para continuar.
+          {aviso && !error && !inativado && (
+            <div role="status" className={`mb-4 border px-4 py-3 text-sm rounded-btn flex gap-2 items-start ${aviso.tipo === 'sucesso' ? 'bg-success-bg border-success-border text-success' : 'bg-warning-bg border-warning-border text-warning'}`}>
+              {aviso.tipo === 'sucesso' ? <CheckCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /> : <Clock size={16} className="mt-0.5 shrink-0" aria-hidden="true" />}
+              <span>{aviso.texto}</span>
             </div>
           )}
           <h2 className="text-2xl font-bold text-ink mb-1.5">Acesse sua conta</h2>
@@ -118,7 +131,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setInativado(null); }}
                   placeholder="seu@email.com"
                   className="w-full pl-10 pr-3 py-2.5 border border-line rounded-btn bg-card text-ink placeholder:text-muted/50 focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                 />
@@ -151,6 +164,16 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {inativado && (
+              <div role="alert" className="bg-warning-bg border border-warning-border px-4 py-3 text-sm text-warning rounded-btn flex gap-3 items-start">
+                <UserX size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-semibold">Usuário inativado</p>
+                  <p className="mt-0.5 text-ink">{inativado}</p>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div
                 role="alert"
@@ -158,7 +181,7 @@ export default function LoginPage() {
               >
                 <p>{error}</p>
                 {retryAfter != null && retryAfter > 0 && (
-                  <p className="mt-1 text-xs font-semibold">Tente novamente em {Math.floor(retryAfter/60)}:{String(retryAfter%60).padStart(2,'0')} (bloqueio por e-mail: 5 tentativas / IP: 20 em 5 min). Outro navegador com e-mail diferente no mesmo IP ainda pode entrar.</p>
+                  <p className="mt-1 text-xs font-semibold" aria-live="off">Você poderá tentar novamente em {Math.floor(retryAfter/60)}:{String(retryAfter%60).padStart(2,'0')}.</p>
                 )}
               </div>
             )}

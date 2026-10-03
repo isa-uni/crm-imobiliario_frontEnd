@@ -5,24 +5,19 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { authService } from '@/service/authService';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
-
-const PUBLIC_ROUTES = ['/login', '/trocar-senha'];
-const ADMIN_ROUTES = ['/usuarios'];
-const GESTOR_ROUTES = ['/dashboard/gestor'];
+import { ROTAS_PUBLICAS, podeAcessarRota } from '@/lib/acesso';
 
 export default function RouteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [checked, setChecked] = useState(false);
 
-  const isPublic = PUBLIC_ROUTES.includes(pathname);
+  const isPublic = ROTAS_PUBLICAS.includes(pathname);
   const enabledInactivity = !isPublic && typeof window !== 'undefined' && !!authService.getUsuario();
   const { showWarning, countdown, keepAlive, logout } = useInactivityLogout({ enabled: enabledInactivity });
 
   useEffect(() => {
     const authenticated = authService.isAuthenticated();
-    const isAdminRoute = ADMIN_ROUTES.includes(pathname);
-    const isGestorRoute = GESTOR_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'));
 
     if (isPublic) {
       if (pathname === '/login') {
@@ -35,25 +30,13 @@ export default function RouteShell({ children }: { children: React.ReactNode }) 
           router.replace('/login?reason=expired');
           return;
         }
-        // valida também se token está expirado mesmo com troca obrigatória
-        if (authService.isExpired()) {
-          authService.logoutLocal();
-          router.replace('/login?reason=expired');
-          return;
-        }
       }
     } else {
+      // A validade do token (cookie httpOnly) é verificada pelo backend: se o access token expirou,
+      // api.ts renova com o refresh token antes de mandar o usuário para o login.
       if (!authenticated) {
-        const fetched = authService.getUsuario();
-        if (!fetched) {
-          router.replace('/login?reason=expired');
-          return;
-        }
-        // se tem usuario mas token expirou, api.ts tentará refresh antes de cair aqui
-        if (authService.isExpired()) {
-          router.replace('/login?reason=expired');
-          return;
-        }
+        router.replace('/login?reason=expired');
+        return;
       }
 
       if (authService.trocarSenhaObrigatoria()) {
@@ -61,12 +44,8 @@ export default function RouteShell({ children }: { children: React.ReactNode }) 
         return;
       }
 
-      if (isAdminRoute && authService.getUsuario()?.papel !== 'admin') {
-        router.replace('/dashboard');
-        return;
-      }
-
-      if (isGestorRoute && !['admin','gestor'].includes(authService.getUsuario()?.papel || '')) {
+      // mesma regra do menu (lib/acesso.ts); papel sem acesso volta para o dashboard
+      if (!podeAcessarRota(pathname, authService.getUsuario()?.papel)) {
         router.replace('/dashboard');
         return;
       }

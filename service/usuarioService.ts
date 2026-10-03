@@ -1,5 +1,6 @@
 import { api } from "./api"
 import type { PerfilPayload, UsuarioPayload } from "@/types"
+import type { PreviaInativacao } from "@/lib/redistribuicao"
 
 export const usuarioService = {
 
@@ -14,18 +15,9 @@ export const usuarioService = {
   },
 
   async atualizarMe(data: PerfilPayload) {
+    // backend renova o cookie httpOnly do access token (claims com nome/e-mail novos) e devolve o usuário
     const response = await api.put("/usuarios/me", data)
-    // Backend agora retorna DadosTokenJWT { token, usuario } sem version++ (normal)
-    // com Set-Cookie httpOnly + body token para atualizar localStorage legacy
-    const body = response.data
-    if (body?.token && body?.usuario) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem("token", body.token)
-        localStorage.setItem("usuario", JSON.stringify(body.usuario))
-      }
-      return body.usuario
-    }
-    return body
+    return response.data
   },
 
   async cadastrar(data: UsuarioPayload & { gestorId?: number | null }) {
@@ -48,8 +40,21 @@ export const usuarioService = {
     return response.data
   },
 
-  async inativar(id: number) {
-    const response = await api.put(`/usuarios/inativar/${id}`)
+  /**
+   * Inativa o usuário. Corretor sem gestor e com leads exige uma decisão:
+   * `gestorId` vincula um gestor antes (ele assume a redistribuição) ou `semGestor` faz quem inativa assumir.
+   */
+  async inativar(id: number, opcoes: { gestorId?: number; semGestor?: boolean } = {}) {
+    const params: Record<string, any> = {}
+    if (opcoes.gestorId) params.gestorId = opcoes.gestorId
+    if (opcoes.semGestor) params.semGestor = true
+    const response = await api.put(`/usuarios/inativar/${id}`, null, { params })
+    return response.data
+  },
+
+  /** Dados para confirmar a inativação: gestor vinculado e leads que irão para redistribuição. */
+  async previaInativacao(id: number): Promise<PreviaInativacao> {
+    const response = await api.get(`/usuarios/${id}/previa-inativacao`)
     return response.data
   },
 

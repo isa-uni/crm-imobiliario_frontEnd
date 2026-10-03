@@ -3,6 +3,9 @@ import React, { useEffect, useState } from "react"
 import { empreendimentoIaService, ExtracaoDTO } from "@/service/empreendimentoIaService"
 import { useToast } from "@/components/ui/ToastProvider"
 import { parseApiError } from "@/lib/errorHandler"
+import { notificarErro, textoDoErro, plural } from "@/lib/feedback"
+import { ErrorState, InlineError } from "@/components/ui/ErrorState"
+import { lerNumeroBR, problemaCep, problemaUf, somenteDigitos } from "@/lib/validacao"
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 
 function Evidencia({ fonte, onUse }: { fonte: any; onUse?: (v:string)=>void }) {
@@ -37,9 +40,8 @@ const CAMPOS_UNIDADE = [
 ] as const
 
 function paraNumero(v: any): number | null {
-  if (v === null || v === undefined || v === "") return null
-  const n = Number(String(v).replace(",", "."))
-  return isNaN(n) ? null : n
+  const n = lerNumeroBR(v)
+  return n === null || Number.isNaN(n) ? null : n
 }
 function paraInteiro(v: any): number | null {
   const n = paraNumero(v)
@@ -60,6 +62,38 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
   const [form, setForm] = useState<any>({ nome: "", cidade: "", bairro: "", regiao: "", status: "" })
   const [unidades, setUnidades] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
+  const [nomeErro, setNomeErro] = useState<string | undefined>()
+  // erros dos dados básicos (CEP, UF) e das células da tabela de unidades ("<linha>.<campo>")
+  const [errosEndereco, setErrosEndereco] = useState<{ cep?: string; uf?: string }>({})
+  const [errosUnidades, setErrosUnidades] = useState<Record<string, string>>({})
+  const [resumoErros, setResumoErros] = useState<string | null>(null)
+  const indicesEnviados = React.useRef<number[]>([])
+
+  /** Mesmas regras do backend (UnidadeDTO): números legíveis, não negativos, nome da unidade presente. */
+  const validarCelula = (linha: any, chave: string): string | null => {
+    const def = CAMPOS_UNIDADE.find(c => c.chave === chave) as any
+    const valor = linha[chave]
+    if (chave === "nomeUnidade") {
+      const temDados = CAMPOS_UNIDADE.some(c => c.chave !== "nomeUnidade" && String(linha[c.chave] ?? "").trim() !== "")
+      return temDados && !String(valor ?? "").trim() ? "Informe o nome da unidade ou remova a linha." : null
+    }
+    if (chave === "garagem" && String(valor ?? "").length > 50) return "Máximo de 50 caracteres."
+    if (def?.tipo) {
+      const n = lerNumeroBR(valor)
+      if (n !== null && Number.isNaN(n)) return def.tipo === "long" ? "Valor não reconhecido. Use números, ex.: 250.000,00" : "Área não reconhecida. Use números, ex.: 45,50"
+      if (n !== null && n < 0) return "Não pode ser negativo."
+    }
+    return null
+  }
+  const validarUnidades = () => {
+    const erros: Record<string, string> = {}
+    unidades.forEach((linha, i) => CAMPOS_UNIDADE.forEach(c => {
+      const p = validarCelula(linha, c.chave)
+      if (p) erros[`${i}.${c.chave}`] = p
+    }))
+    return erros
+  }
+  const [reprocessando, setReprocessando] = useState(false)
 
   const load = async () => {
     setLoading(true); setError(null)
@@ -87,17 +121,27 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
       if (data.status === "processando" || data.status === "pendente") {
         setTimeout(load, 3000)
       }
-    } catch (e:any) { setError(parseApiError(e).message) } finally { setLoading(false) }
+    } catch (e:any) { setError(textoDoErro(parseApiError(e))) } finally { setLoading(false) }
   }
 
   useEffect(()=>{ load() }, [extracaoId])
 
   const atualizarCelulaUnidade = (indice: number, chave: string, valor: string) => {
     setUnidades(prev => prev.map((linha, i) => i === indice ? { ...linha, [chave]: valor } : linha))
+    // o aviso da célula some ao editar; volta a ser verificado ao sair da célula e ao salvar
+    setErrosUnidades(({ [`${indice}.${chave}`]: _, ...resto }) => resto)
+  }
+  const verificarCelula = (indice: number, chave: string) => {
+    const p = validarCelula(unidades[indice], chave)
+    setErrosUnidades(e => {
+      const { [`${indice}.${chave}`]: _, ...resto } = e
+      return p ? { ...resto, [`${indice}.${chave}`]: p } : resto
+    })
   }
 
   const removerUnidade = (indice: number) => {
     setUnidades(prev => prev.filter((_, i) => i !== indice))
+    setErrosUnidades({}) // índices mudam; a próxima verificação refaz os avisos
   }
 
   const conflitosDeUnidade = (chaveUnidade: string, campo: string) => {
@@ -106,7 +150,24 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
   }
 
   const handleConfirm = async () => {
-    if (!form.nome) { toast("Nome é obrigatório", "warning"); return }
+    // valida tudo antes de enviar e mostra cada problema no lugar dele
+    // (antes: só o nome era verificado; valores ilegíveis viravam vazio e linhas sem nome sumiam em silêncio)
+    const erroNome = !form.nome?.trim() ? "Informe o nome do empreendimento."
+      : form.nome.trim().length > 255 ? "O nome do empreendimento deve ter no máximo 255 caracteres." : undefined
+    const errosEnd = { cep: problemaCep(form.cep) ?? undefined, uf: problemaUf(form.uf) ?? undefined }
+    const errosUni = validarUnidades()
+    setNomeErro(erroNome)
+    setErrosEndereco(errosEnd)
+    setErrosUnidades(errosUni)
+    const total = (erroNome ? 1 : 0) + (errosEnd.cep ? 1 : 0) + (errosEnd.uf ? 1 : 0) + Object.keys(errosUni).length
+    if (total > 0) {
+      setResumoErros(total === 1 ? "Corrija o campo destacado antes de salvar." : `Corrija os ${total} campos destacados antes de salvar.`)
+      const primeiro = erroNome ? "rev-nome" : errosEnd.uf ? "rev-uf" : errosEnd.cep ? "rev-cep" : `unidade-${Object.keys(errosUni)[0]}`
+      const el = document.getElementById(primeiro)
+      el?.scrollIntoView({ block: "center", behavior: "smooth" }); el?.focus({ preventScroll: true })
+      return
+    }
+    setResumoErros(null)
     setSaving(true)
     try {
       // monta payload confirmacao
@@ -119,8 +180,9 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         bairro: form.bairro,
         regiao: form.regiao,
         endereco: form.endereco,
-        cep: form.cep,
-        uf: form.uf,
+        // formato padrão do banco: 00000-000 e UF em maiúsculas
+        cep: form.cep?.trim() ? somenteDigitos(form.cep).replace(/^(\d{5})(\d{3})$/, "$1-$2") : null,
+        uf: form.uf?.trim() ? form.uf.trim().toUpperCase() : null,
         // caracteristica etc.: preenchidos abaixo só quando a extração realmente encontrou algo —
         // nunca inventar um valor para um campo que não veio de nenhum documento
         caracteristica: null,
@@ -137,8 +199,9 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
       if (r?.caracteristicas) {
         const c = r.caracteristicas
         payload.caracteristica = {
-          metragemMin: c.metragem_min?.valor ? Number(String(c.metragem_min.valor).replace(",",".")) : null,
-          metragemMax: c.metragem_max?.valor ? Number(String(c.metragem_max.valor).replace(",",".")) : null,
+          // o extrator grava no padrão brasileiro ("1.234,56"): a leitura antiga virava NaN e o valor se perdia
+          metragemMin: paraNumero(c.metragem_min?.valor),
+          metragemMax: paraNumero(c.metragem_max?.valor),
           quartosMin: c.quartos_min?.valor ? Number(c.quartos_min.valor) : null,
           quartosMax: c.quartos_max?.valor ? Number(c.quartos_max.valor) : null,
           pavimentos: c.pavimentos?.valor ? Number(c.pavimentos.valor) : null,
@@ -165,8 +228,9 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
       if (r?.precos && Array.isArray(r.precos) && r.precos[0]) {
         const p = r.precos[0]
         payload.precos = [{
-          valorMin: p.valor_min?.valor ? Number(String(p.valor_min.valor).replace(/\D/g,"")) : null,
-          valorMax: p.valor_max?.valor ? Number(String(p.valor_max.valor).replace(/\D/g,"")) : null,
+          // remover tudo que não é dígito multiplicava "250000.00" por 100
+          valorMin: paraInteiro(p.valor_min?.valor),
+          valorMax: paraInteiro(p.valor_max?.valor),
         }]
       }
       if (Array.isArray(r?.diferenciais)) {
@@ -174,6 +238,8 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
           .map((d: any) => ({ titulo: d.titulo?.valor || "" }))
           .filter((d: any) => d.titulo.trim() !== "")
       }
+      // linhas totalmente vazias são ignoradas; guarda o índice original para mapear erros do servidor
+      indicesEnviados.current = unidades.map((u, i) => (u.nomeUnidade && String(u.nomeUnidade).trim() !== "" ? i : -1)).filter(i => i >= 0)
       payload.unidades = unidades
         .filter(u => u.nomeUnidade && String(u.nomeUnidade).trim() !== "")
         .map(u => ({
@@ -195,31 +261,52 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         }))
 
       await empreendimentoIaService.confirmar(payload)
-      toast("Empreendimento criado com sucesso!", "success")
+      const qtd = Array.isArray(payload.unidades) ? payload.unidades.length : 0
+      toast(`Empreendimento "${form.nome.trim()}" salvo${qtd ? ` com ${plural(qtd, "unidade", "unidades")}` : ""}.`, "success")
       window.location.href = "/empreendimentos"
-    } catch (e:any) { toast(parseApiError(e).message, "error") } finally { setSaving(false) }
+    } catch (e:any) {
+      const p = notificarErro(toast, "Não foi possível salvar o empreendimento", e)
+      if (p.fields?.nome) setNomeErro(p.fields.nome)
+      if (p.fields?.cep || p.fields?.uf) setErrosEndereco({ cep: p.fields.cep, uf: p.fields.uf })
+      // "unidades[3].preco" → célula da linha original correspondente
+      const doServidor: Record<string, string> = {}
+      Object.entries(p.fields ?? {}).forEach(([k, msg]) => {
+        const m = /^unidades\[(\d+)\]\.(\w+)$/.exec(k)
+        if (m) doServidor[`${indicesEnviados.current[Number(m[1])] ?? m[1]}.${m[2]}`] = msg
+      })
+      if (Object.keys(doServidor).length) setErrosUnidades(doServidor)
+    } finally { setSaving(false) }
   }
 
-  if (loading) return <div className="p-12 text-center text-muted animate-pulse">Carregando extração...</div>
-  if (error) return <div className="p-12 text-center"><p className="text-danger">{error}</p><button onClick={load} className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn">Tentar novamente</button></div>
+  if (loading) return <div className="p-12 text-center text-muted motion-safe:animate-pulse" role="status">Carregando os dados extraídos dos documentos...</div>
+  if (error) return <div className="p-6"><ErrorState message="Não foi possível carregar a revisão dos documentos." details={error} onRetry={load} /></div>
   if (!extracao) return null
 
   if (extracao.status === "processando" || extracao.status === "pendente") {
     return (
       <div className="p-12 text-center">
-        <Loader2 size={32} className="mx-auto animate-spin text-brand-fg mb-3"/>
-        <p className="font-semibold text-ink">Processando documentos...</p>
-        <p className="text-sm text-muted mt-1">Extraindo informações, validando e identificando conflitos</p>
+        <Loader2 size={32} className="mx-auto animate-spin text-brand-fg mb-3" aria-hidden="true"/>
+        <p className="font-semibold text-ink" role="status">Lendo os documentos enviados...</p>
+        <p className="text-sm text-muted mt-1">Extraindo as informações e identificando conflitos entre documentos. Esta tela atualiza sozinha quando terminar.</p>
       </div>
     )
   }
   if (extracao.status === "erro") {
     return (
       <div className="p-12 text-center">
-        <AlertTriangle size={32} className="mx-auto text-danger mb-3"/>
-        <p className="font-semibold text-ink">Falha na extração</p>
-        <p className="text-sm text-muted mt-1">{extracao.erro || "Tente novamente"}</p>
-        <button onClick={async()=>{ await empreendimentoIaService.reprocessar(extracaoId); load()}} className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn">Reprocessar</button>
+        <AlertTriangle size={32} className="mx-auto text-danger mb-3" aria-hidden="true"/>
+        <p className="font-semibold text-ink" role="alert">Não foi possível ler os documentos enviados</p>
+        <p className="text-sm text-muted mt-1">{extracao.erro || "A leitura terminou com erro, sem um motivo registrado."} Você pode tentar ler os mesmos documentos novamente.</p>
+        <button
+          disabled={reprocessando}
+          onClick={async()=>{
+            // antes: sem retorno nenhum se a nova tentativa falhasse
+            setReprocessando(true)
+            try { await empreendimentoIaService.reprocessar(extracaoId); toast("Nova leitura dos documentos iniciada.", "info"); load() }
+            catch (e) { notificarErro(toast, "Não foi possível iniciar uma nova leitura", e) }
+            finally { setReprocessando(false) }
+          }}
+          className="mt-4 px-4 py-2 bg-brand text-on-brand rounded-btn disabled:opacity-60">{reprocessando ? "Iniciando nova leitura..." : "Ler novamente"}</button>
       </div>
     )
   }
@@ -252,10 +339,15 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                     <Evidencia key={idx} fonte={v} onUse={(val)=> {
                       // aplica no form
                       const campoSimples = c.campo.split(".").pop() || c.campo
-                      if (campoSimples.includes("nome")) setForm((f:any)=>({...f, nome: val}))
-                      if (campoSimples.includes("cidade")) setForm((f:any)=>({...f, cidade: val}))
-                      if (campoSimples.includes("regiao")) setForm((f:any)=>({...f, regiao: val}))
-                      toast(`Valor ${val} aplicado em ${campoSimples}`, "success")
+                      // só confirma quando o valor foi de fato aplicado (antes dizia "aplicado" para qualquer campo)
+                      const alvo = ["nome", "cidade", "regiao"].find(k => campoSimples.includes(k))
+                      if (alvo) {
+                        setForm((f:any)=>({...f, [alvo]: val}))
+                        if (alvo === "nome") setNomeErro(undefined)
+                        toast(`"${val}" aplicado no campo ${alvo === "regiao" ? "região" : alvo}.`, "success")
+                      } else {
+                        toast(`O campo "${campoSimples}" não é preenchido automaticamente. Copie o valor e ajuste-o no formulário abaixo.`, "info")
+                      }
                     }}/>
                   ))}
                 </div>
@@ -270,7 +362,8 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-semibold text-muted">Nome *</label>
-            <input value={form.nome} onChange={e=>setForm({...form, nome:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1" placeholder="Residencial London Plaza"/>
+            <input id="rev-nome" maxLength={255} aria-label="Nome do empreendimento" aria-invalid={!!nomeErro} aria-describedby={nomeErro ? "rev-nome-erro" : undefined} value={form.nome} onChange={e=>{ setForm({...form, nome:e.target.value}); setNomeErro(undefined) }} className={`w-full p-2.5 border ${nomeErro ? "border-danger" : "border-line"} rounded-btn mt-1`} placeholder="Residencial London Plaza"/>
+            <InlineError id="rev-nome-erro" message={nomeErro} />
             {porCampo["identificacao.nome"] && <div className="mt-2 space-y-1">{porCampo["identificacao.nome"].map((f:any,i:number)=><Evidencia key={i} fonte={f}/>)}</div>}
           </div>
           <div>
@@ -290,16 +383,26 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
             <input value={form.regiao || ""} onChange={e=>setForm({...form,regiao:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1" placeholder="Zona Norte"/>
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted">UF</label>
-            <input value={form.uf || ""} onChange={e=>setForm({...form,uf:e.target.value})} maxLength={2} className="w-full p-2.5 border border-line rounded-btn mt-1 uppercase"/>
+            <label htmlFor="rev-uf" className="text-xs font-semibold text-muted">UF</label>
+            <input id="rev-uf" value={form.uf || ""} placeholder="PR" maxLength={2}
+              onChange={e=>{ setForm({...form,uf:e.target.value}); setErrosEndereco(x=>({...x, uf: undefined})) }}
+              onBlur={()=>setErrosEndereco(x=>({...x, uf: problemaUf(form.uf) ?? undefined}))}
+              aria-invalid={!!errosEndereco.uf || undefined} aria-describedby={errosEndereco.uf ? "rev-uf-erro" : undefined}
+              className={`w-full p-2.5 border rounded-btn mt-1 uppercase ${errosEndereco.uf ? "border-danger" : "border-line"}`}/>
+            <InlineError id="rev-uf-erro" message={errosEndereco.uf} />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted">Endereço</label>
             <input value={form.endereco} onChange={e=>setForm({...form,endereco:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1"/>
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted">CEP</label>
-            <input value={form.cep} onChange={e=>setForm({...form,cep:e.target.value})} className="w-full p-2.5 border border-line rounded-btn mt-1"/>
+            <label htmlFor="rev-cep" className="text-xs font-semibold text-muted">CEP</label>
+            <input id="rev-cep" value={form.cep} placeholder="00000-000" inputMode="numeric" maxLength={9}
+              onChange={e=>{ setForm({...form,cep:e.target.value}); setErrosEndereco(x=>({...x, cep: undefined})) }}
+              onBlur={()=>setErrosEndereco(x=>({...x, cep: problemaCep(form.cep) ?? undefined}))}
+              aria-invalid={!!errosEndereco.cep || undefined} aria-describedby={errosEndereco.cep ? "rev-cep-erro" : undefined}
+              className={`w-full p-2.5 border rounded-btn mt-1 ${errosEndereco.cep ? "border-danger" : "border-line"}`}/>
+            <InlineError id="rev-cep-erro" message={errosEndereco.cep} />
           </div>
         </div>
       </div>
@@ -323,14 +426,21 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
                   <tr key={i} className="border-b border-line/60 hover:bg-surface/40">
                     {CAMPOS_UNIDADE.map(c => {
                       const conflitosCelula = conflitosDeUnidade(linha._chave, c.campo)
+                      const erroCelula = errosUnidades[`${i}.${c.chave}`]
                       return (
                         <td key={c.chave} className="py-1 pr-3">
                           <input
+                            id={`unidade-${i}.${c.chave}`}
+                            aria-label={`${c.label} da unidade ${linha.nomeUnidade || i + 1}`}
+                            aria-invalid={!!erroCelula || undefined}
+                            aria-describedby={erroCelula ? `unidade-${i}.${c.chave}-erro` : undefined}
                             value={linha[c.chave] ?? ""}
                             onChange={e => atualizarCelulaUnidade(i, c.chave, e.target.value)}
-                            className={`w-28 p-1.5 border rounded-btn ${conflitosCelula.length > 1 ? "border-warning bg-warning-bg" : "border-line"}`}
+                            onBlur={() => verificarCelula(i, c.chave)}
+                            className={`w-28 p-1.5 border rounded-btn ${erroCelula ? "border-danger bg-danger-bg" : conflitosCelula.length > 1 ? "border-warning bg-warning-bg" : "border-line"}`}
                             title={conflitosCelula.length > 1 ? "Conflito entre documentos — confira os valores abaixo" : undefined}
                           />
+                          {erroCelula && <p id={`unidade-${i}.${c.chave}-erro`} className="mt-0.5 w-28 text-[10px] leading-tight text-danger">{erroCelula}</p>}
                           {conflitosCelula.length > 1 && (
                             <div className="mt-1 space-y-1">
                               {conflitosCelula.map((f: any, fi: number) => (
@@ -372,10 +482,13 @@ export default function EmpreendimentoRevisao({ extracaoId }: { extracaoId: numb
         </div>
       </div>
 
+      {resumoErros && (
+        <p role="alert" className="text-sm text-danger bg-danger-bg border border-danger-border rounded-btn px-4 py-2.5">{resumoErros}</p>
+      )}
       <div className="flex gap-3">
         <button onClick={()=>window.history.back()} className="flex-1 px-4 py-2.5 border border-line rounded-btn text-muted">Cancelar</button>
         <button onClick={handleConfirm} disabled={saving} className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn disabled:opacity-50 flex items-center justify-center gap-2">
-          {saving ? <Loader2 size={16} className="animate-spin"/> : <CheckCircle size={16}/>} Confirmar e salvar
+          {saving ? <Loader2 size={16} className="animate-spin" aria-hidden="true"/> : <CheckCircle size={16} aria-hidden="true"/>} {saving ? "Salvando empreendimento..." : "Confirmar e salvar"}
         </button>
       </div>
     </div>

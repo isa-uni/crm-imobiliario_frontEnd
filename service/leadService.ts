@@ -18,6 +18,11 @@ export const leadService = {
     return d
   },
 
+  /** Contadores dos cards da tela de Leads, calculados no servidor sobre todos os leads do escopo. */
+  async getResumo(): Promise<{ total: number; ativos: number; contratos: number; esteMes: number }> {
+    const response = await api.get("/leads/resumo")
+    return response.data
+  },
   async exportarExcel(filtros: { search?: string; status?: string; month?: string; origem?: string; historico?: string }) {
     const q: any = {}
     if (filtros.search) q.search = filtros.search
@@ -61,6 +66,12 @@ export const leadService = {
 
   async redistribuir(leadId: number, novoCorretorId: number) {
     const res = await api.post("/leads/redistribuir", { leadId, novoCorretorId })
+    return res.data
+  },
+
+  /** Atribui todos os leads selecionados ao mesmo corretor (tudo ou nada). */
+  async redistribuirEmMassa(leadIds: number[], novoCorretorId: number): Promise<{ atribuidos: number }> {
+    const res = await api.post("/leads/redistribuir-em-massa", { leadIds, novoCorretorId })
     return res.data
   },
 

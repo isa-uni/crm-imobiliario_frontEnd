@@ -1,13 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2 } from 'lucide-react';
+import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2, Copy, CheckCircle } from 'lucide-react';
 import { Usuario, Papel, UsuarioPayload } from '@/types';
 import { usuarioService } from '@/service/usuarioService';
 import { papelService } from '@/service/papelService';
 import { authService } from '@/service/authService';
+import { parseApiError } from '@/lib/errorHandler';
+import { notificarErro, textoDoErro, plural } from '@/lib/feedback';
+import { useToast } from '@/components/ui/ToastProvider';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { ErrorState, InlineError } from '@/components/ui/ErrorState';
+import { problemaSenha } from '@/lib/validacao';
 import UsuarioModal from '@/components/UsuarioModal';
 import PapelModal from '@/components/PapelModal';
+import InativacaoSemGestorModal, { type DecisaoSemGestor } from '@/components/InativacaoSemGestorModal';
+import { fluxoDeInativacao, mensagemInativacao, type PreviaInativacao } from '@/lib/redistribuicao';
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -23,9 +31,20 @@ export default function UsuariosPage() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [senhaError, setSenhaError] = useState<string | null>(null);
+  // erros por campo do modal de redefinição (antes: um texto só, abaixo dos dois campos)
+  const [senhaCampos, setSenhaCampos] = useState<{ novaSenha?: string; confirmarSenha?: string }>({});
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [notify, setNotify] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // senha temporária: fica visível até o admin fechar (é exibida uma única vez — não pode sumir sozinha como um toast)
+  const [senhaTemporaria, setSenhaTemporaria] = useState<{ nome: string; senha: string } | null>(null);
+  const [copiada, setCopiada] = useState(false);
+  const { toast } = useToast();
+  const confirmar = useConfirm();
+  // corretor sem gestor e com leads: o admin decide quem cuida da redistribuição antes de inativar
+  const [previaSemGestor, setPreviaSemGestor] = useState<{ usuario: Usuario; previa: PreviaInativacao } | null>(null);
+  const [erroSemGestor, setErroSemGestor] = useState<string | null>(null);
+  const [inativando, setInativando] = useState(false);
 
   const meId = authService.getUsuario()?.id;
 
@@ -38,17 +57,27 @@ export default function UsuariosPage() {
     setPapeis(papeisData);
   };
 
-  useEffect(() => {
+  const carregar = () => {
+    setLoading(true);
+    setLoadError(null);
     loadData()
-      .catch((err: any) => {
-        if (err.response?.status === 403) {
-          setNotify('Acesso não permitido. Apenas administradores gerenciam usuários.');
-        } else {
-          setNotify('Não foi possível carregar os usuários.');
-        }
-      })
+      // motivo real (sem permissão, sem conexão, erro do servidor com código de referência)
+      .catch((err: any) => setLoadError(textoDoErro(parseApiError(err))))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  const copiarSenha = async () => {
+    if (!senhaTemporaria) return;
+    try {
+      await navigator.clipboard.writeText(senhaTemporaria.senha);
+      setCopiada(true);
+      setTimeout(() => setCopiada(false), 2500);
+    } catch {
+      toast('Não foi possível copiar automaticamente. Selecione a senha e copie manualmente.', 'warning');
+    }
+  };
 
   const filteredUsuarios = useMemo(() => {
     return usuarios.filter((u) => {
@@ -79,44 +108,98 @@ export default function UsuariosPage() {
       setErrors({});
       if (editingUsuario) {
         await usuarioService.atualizar(editingUsuario.id, payload);
-        setNotify('Usuário atualizado com sucesso.');
+        toast(`Dados de ${payload.nome} atualizados com sucesso.`, 'success');
       } else {
-        await usuarioService.cadastrar(payload);
-        setNotify('Usuário cadastrado com sucesso. A senha inicial são os 4 últimos dígitos do CPF.');
+        const criado = await usuarioService.cadastrar(payload);
+        // senha temporária aleatória gerada pelo backend — exibida uma única vez para o admin repassar
+        if (criado?.senhaTemporaria) {
+          setCopiada(false);
+          setSenhaTemporaria({ nome: payload.nome, senha: criado.senhaTemporaria });
+        } else {
+          toast(`Usuário ${payload.nome} cadastrado com sucesso.`, 'success');
+        }
       }
       await loadData();
       setEditingUsuario(null);
       return true;
     } catch (error: any) {
-      if (error.response?.data?.errors) {
-        const backendErrors: any = {};
-        error.response.data.errors.forEach((err: any) => {
-          backendErrors[err.field] = err.message;
-        });
-        setErrors(backendErrors);
-      } else if (error.response?.data && typeof error.response.data === 'string') {
-        setErrors({ geral: error.response.data });
-      } else {
-        setErrors({ geral: 'Erro ao salvar usuário' });
-      }
+      // erro de campo (ex.: "Já existe um usuário cadastrado com este e-mail.") aparece junto ao campo;
+      // os demais (sem permissão, servidor) aparecem no topo do formulário
+      const parsed = parseApiError(error);
+      setErrors(parsed.fields && Object.keys(parsed.fields).length ? parsed.fields : { geral: textoDoErro(parsed) });
       return false;
     }
   };
 
-  const handleToggleAtivo = async (usuario: Usuario) => {
-    const acao = usuario.ativo ? 'desativar' : 'reativar';
-    if (!confirm(`Tem certeza que deseja ${acao} o usuário ${usuario.nome}?`)) return;
-
+  /** Executa a inativação já decidida e informa o resultado com o responsável pela redistribuição. */
+  const executarInativacao = async (usuario: Usuario, previa: PreviaInativacao | null, decisao?: DecisaoSemGestor) => {
+    setInativando(true);
+    setErroSemGestor(null);
     try {
-      if (usuario.ativo) {
-        await usuarioService.inativar(usuario.id);
-      } else {
-        await usuarioService.ativar(usuario.id);
-      }
-      setNotify(usuario.ativo ? 'Usuário desativado.' : 'Usuário reativado.');
+      await usuarioService.inativar(usuario.id, decisao?.tipo === 'vincular' ? { gestorId: decisao.gestorId }
+        : decisao?.tipo === 'assumir' ? { semGestor: true } : {});
+      const n = previa?.leadsAtribuidos ?? 0;
+      const gestorNome = decisao?.tipo === 'vincular' ? usuarios.find(u => u.id === decisao.gestorId)?.nome : previa?.gestorNome;
+      const leadsTxt = n === 1 ? '1 lead aguarda' : `${n} leads aguardam`;
+      toast(n === 0
+        ? `${usuario.nome} foi desativado.`
+        : decisao?.tipo === 'assumir'
+          ? `${usuario.nome} foi desativado. ${leadsTxt} redistribuição sob sua responsabilidade, na tela Redistribuição.`
+          : `${usuario.nome} foi desativado. ${leadsTxt} redistribuição; ${gestorNome ?? 'o gestor'} foi notificado.`, 'success');
+      setPreviaSemGestor(null);
       await loadData();
-    } catch {
-      setNotify('Não foi possível alterar o status do usuário.');
+    } catch (err) {
+      const p = parseApiError(err);
+      // outra pessoa removeu o gestor nesse meio-tempo: pede a decisão
+      if (p.code === 'CORRETOR_SEM_GESTOR') {
+        try { setPreviaSemGestor({ usuario, previa: await usuarioService.previaInativacao(usuario.id) }); } catch {}
+      } else if (previaSemGestor && p.fields?.gestorId) {
+        setErroSemGestor(p.fields.gestorId);
+      } else {
+        notificarErro(toast, `Não foi possível desativar ${usuario.nome}`, err);
+      }
+    } finally {
+      setInativando(false);
+    }
+  };
+
+  const handleToggleAtivo = async (usuario: Usuario) => {
+    if (usuario.ativo) {
+      // consulta antes: gestor vinculado e quantos leads irão para redistribuição
+      let previa: PreviaInativacao;
+      try {
+        previa = await usuarioService.previaInativacao(usuario.id);
+      } catch (err) {
+        notificarErro(toast, `Não foi possível preparar a inativação de ${usuario.nome}`, err);
+        return;
+      }
+      if (fluxoDeInativacao(previa) === 'decidir-gestor') {
+        setErroSemGestor(null);
+        setPreviaSemGestor({ usuario, previa });
+        return;
+      }
+      const ok = await confirmar({
+        titulo: `Desativar ${usuario.nome}?`,
+        mensagem: mensagemInativacao(previa),
+        confirmarLabel: 'Desativar usuário',
+        perigo: true,
+      });
+      if (ok) await executarInativacao(usuario, previa);
+      return;
+    }
+
+    const ok = await confirmar({
+      titulo: `Reativar ${usuario.nome}?`,
+      mensagem: `${usuario.nome} voltará a acessar o sistema com a senha atual.`,
+      confirmarLabel: 'Reativar usuário',
+    });
+    if (!ok) return;
+    try {
+      await usuarioService.ativar(usuario.id);
+      toast(`${usuario.nome} foi reativado e já pode acessar o sistema.`, 'success');
+      await loadData();
+    } catch (err) {
+      notificarErro(toast, `Não foi possível reativar ${usuario.nome}`, err);
     }
   };
 
@@ -137,6 +220,7 @@ export default function UsuariosPage() {
     setNovaSenha('');
     setConfirmarSenha('');
     setSenhaError(null);
+    setSenhaCampos({});
     setIsSenhaModalOpen(true);
   };
 
@@ -144,61 +228,64 @@ export default function UsuariosPage() {
     e.preventDefault();
     setSenhaError(null);
 
-    if (!novaSenha || novaSenha.length < 6) {
-      setSenhaError('A nova senha deve ter no mínimo 6 caracteres.');
-      return;
-    }
-    if (novaSenha !== confirmarSenha) {
-      setSenhaError('A confirmação não confere com a nova senha.');
+    // mesma regra do backend (validarForcaSenha): antes só o tamanho era verificado aqui
+    const campos: { novaSenha?: string; confirmarSenha?: string } = {};
+    campos.novaSenha = !novaSenha ? 'Informe a nova senha.' : problemaSenha(novaSenha) ?? undefined;
+    campos.confirmarSenha = !confirmarSenha ? 'Confirme a nova senha.'
+      : confirmarSenha !== novaSenha ? 'A confirmação está diferente da nova senha. Digite a mesma senha nos dois campos.' : undefined;
+    setSenhaCampos(campos);
+    if (campos.novaSenha || campos.confirmarSenha) {
+      document.getElementById(campos.novaSenha ? 'redefinir-novaSenha' : 'redefinir-confirmar')?.focus();
       return;
     }
     if (!senhaTarget) return;
 
     try {
       await usuarioService.trocarSenhaAdmin(senhaTarget.id, novaSenha);
-      setNotify('Senha redefinida. O usuário deverá trocá-la no próximo login.');
+      toast(`Senha de ${senhaTarget.nome} redefinida. Ele deverá trocá-la no próximo acesso.`, 'success');
       setIsSenhaModalOpen(false);
       setSenhaTarget(null);
       await loadData();
     } catch (err: any) {
-      setSenhaError(
-        err.response?.data && typeof err.response.data === 'string'
-          ? err.response.data
-          : 'Não foi possível redefinir a senha.'
-      );
+      // motivo real: senha fraca (com o requisito que faltou), usuário não encontrado, etc.
+      const p = parseApiError(err);
+      if (p.fields?.novaSenha) setSenhaCampos({ novaSenha: p.fields.novaSenha });
+      else setSenhaError(textoDoErro(p));
     }
   };
 
-  const handleNovoPapel = async (papel: string) => {
+  /** Retorna null em caso de sucesso ou o motivo do erro, que o modal exibe junto ao campo. */
+  const handleNovoPapel = async (papel: string): Promise<string | null> => {
     try {
       await papelService.criar(papel);
       await loadData();
-      setNotify(`Papel "${papel}" criado.`);
-      return true;
-    } catch {
-      return false;
+      toast(`Papel "${papel}" criado com sucesso.`, 'success');
+      return null;
+    } catch (err) {
+      // antes o motivo era descartado e o modal dizia apenas "Não foi possível criar o papel."
+      return textoDoErro(parseApiError(err));
     }
   };
 
   const handleDeletePapel = async (papel: Papel) => {
     const count = usuarios.filter((u) => u.papel === papel.papel).length;
-    const mensagem =
-      count > 0
-        ? `O papel "${papel.papel}" está vinculado a ${count} usuário(s) (incluindo desativados). Ele será ocultado do sistema e os usuários manterão o vínculo. Continuar?`
-        : `Excluir o papel "${papel.papel}"?`;
-
-    if (!confirm(mensagem)) return;
+    // o backend apenas inativa o papel (PapelController.excluir): ele some das listas, mas os vínculos ficam
+    const ok = await confirmar({
+      titulo: `Excluir o papel "${papel.papel}"?`,
+      mensagem: count > 0
+        ? `${plural(count, 'usuário está vinculado', 'usuários estão vinculados')} a este papel (contando os desativados). O papel deixará de aparecer para novos cadastros, mas esses usuários continuarão com ele.`
+        : 'O papel deixará de aparecer para novos cadastros.',
+      confirmarLabel: 'Excluir papel',
+      perigo: true,
+    });
+    if (!ok) return;
 
     try {
       await papelService.excluir(papel.id);
       await loadData();
-      setNotify(`Papel "${papel.papel}" excluído.`);
+      toast(`Papel "${papel.papel}" excluído.`, 'success');
     } catch (err: any) {
-      const message =
-        err.response?.data && typeof err.response.data === 'string'
-          ? err.response.data
-          : 'Não foi possível excluir o papel.';
-      setNotify(message);
+      notificarErro(toast, `Não foi possível excluir o papel "${papel.papel}"`, err);
     }
   };
 
@@ -227,12 +314,39 @@ export default function UsuariosPage() {
           </button>
         </div>
 
-        {notify && (
-          <div className="mb-6 bg-info-bg border border-info-border px-4 py-3 text-sm text-info rounded-btn flex items-center justify-between">
-            <span>{notify}</span>
-            <button onClick={() => setNotify(null)} className="text-brand-fg hover:text-brand-hover">
-              <X size={16} />
+        {senhaTemporaria && (
+          <div role="status" className="mb-6 bg-success-bg border border-success-border px-4 py-3 text-sm text-success rounded-btn flex items-start gap-3">
+            <CheckCircle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold">Usuário {senhaTemporaria.nome} cadastrado com sucesso.</p>
+              <p className="mt-1 text-ink">
+                Senha temporária:{' '}
+                <code className="px-1.5 py-0.5 bg-card border border-line rounded font-mono select-all break-all">{senhaTemporaria.senha}</code>
+                <button
+                  type="button"
+                  onClick={copiarSenha}
+                  className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-fg hover:text-brand-hover"
+                >
+                  <Copy size={13} aria-hidden="true" /> {copiada ? 'Copiada!' : 'Copiar'}
+                </button>
+              </p>
+              <p className="mt-1 text-muted">
+                Repasse esta senha ao usuário. Ela não será exibida novamente e deverá ser trocada no primeiro acesso.
+              </p>
+            </div>
+            <button
+              onClick={() => setSenhaTemporaria(null)}
+              aria-label="Fechar aviso da senha temporária"
+              className="p-1 rounded text-muted hover:text-ink"
+            >
+              <X size={16} aria-hidden="true" />
             </button>
+          </div>
+        )}
+
+        {loadError && !loading && (
+          <div className="mb-6">
+            <ErrorState message="Não foi possível carregar os usuários." details={loadError} onRetry={carregar} />
           </div>
         )}
 
@@ -269,7 +383,8 @@ export default function UsuariosPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {papeis.map((p) => {
-              const isSystem = p.papel === 'admin' || p.papel === 'corretor';
+              // mesma lista do backend (PapelController.PAPEIS_DE_SISTEMA): as regras de negócio dependem destes papéis
+              const isSystem = ['admin', 'gestor', 'corretor'].includes(p.papel);
               const count = usuarios.filter((u) => u.papel === p.papel).length;
               return (
                 <span
@@ -284,6 +399,7 @@ export default function UsuariosPage() {
                     onClick={() => handleDeletePapel(p)}
                     disabled={isSystem}
                     title={isSystem ? 'Papel do sistema — não pode ser excluído' : 'Excluir papel'}
+                    aria-label={isSystem ? `O papel ${p.papel} é do sistema e não pode ser excluído` : `Excluir o papel ${p.papel}`}
                     className={`p-0.5 ${
                       isSystem
                         ? 'text-placeholder cursor-not-allowed'
@@ -341,19 +457,26 @@ export default function UsuariosPage() {
         {/* Tabela */}
         <div className="bg-card border border-line rounded-card shadow-card overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 size={32} className="animate-spin text-brand-fg" />
+            <div className="flex flex-col items-center justify-center gap-3 py-16" role="status">
+              <Loader2 size={32} className="animate-spin text-brand-fg" aria-hidden="true" />
+              <p className="text-sm text-muted">Carregando usuários...</p>
             </div>
-          ) : filteredUsuarios.length === 0 ? (
+          ) : loadError ? null : filteredUsuarios.length === 0 ? (
             <div className="text-center py-12">
-              <Users size={48} className="mx-auto text-muted mb-4" />
-              <p className="text-muted text-lg">Nenhum usuário encontrado</p>
-              <button
-                onClick={openNovo}
-                className="mt-4 text-brand-fg hover:text-brand-hover font-medium"
-              >
-                Adicionar primeiro usuário
-              </button>
+              <Users size={48} className="mx-auto text-muted mb-4" aria-hidden="true" />
+              {usuarios.length === 0 ? (
+                <>
+                  <p className="text-muted text-lg">Nenhum usuário cadastrado ainda.</p>
+                  <button
+                    onClick={openNovo}
+                    className="mt-4 text-brand-fg hover:text-brand-hover font-medium"
+                  >
+                    Adicionar primeiro usuário
+                  </button>
+                </>
+              ) : (
+                <p className="text-muted text-lg">Nenhum usuário corresponde à busca ou aos filtros selecionados.</p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -412,6 +535,7 @@ export default function UsuariosPage() {
                             <button
                               onClick={() => openEditar(usuario)}
                               title="Editar usuário"
+                              aria-label={`Editar ${usuario.nome}`}
                               className="p-2 rounded-lg text-muted hover:text-brand-fg hover:bg-brand-soft"
                             >
                               <Edit size={18} />
@@ -419,6 +543,7 @@ export default function UsuariosPage() {
                             <button
                               onClick={() => openRedefinirSenha(usuario)}
                               title="Redefinir senha"
+                              aria-label={`Redefinir a senha de ${usuario.nome}`}
                               className="p-2 rounded-lg text-muted hover:text-warning hover:bg-warning-bg"
                             >
                               <KeyRound size={18} />
@@ -426,7 +551,8 @@ export default function UsuariosPage() {
                             <button
                               onClick={() => handleToggleAtivo(usuario)}
                               disabled={isMe}
-                              title={usuario.ativo ? 'Desativar usuário' : 'Reativar usuário'}
+                              title={isMe ? 'Você não pode desativar o próprio usuário' : usuario.ativo ? 'Desativar usuário' : 'Reativar usuário'}
+                              aria-label={isMe ? 'Você não pode desativar o próprio usuário' : `${usuario.ativo ? 'Desativar' : 'Reativar'} ${usuario.nome}`}
                               className={`p-2 rounded-lg ${
                                 isMe
                                   ? 'text-placeholder cursor-not-allowed'
@@ -463,6 +589,18 @@ export default function UsuariosPage() {
           usuarios={usuarios}
         />
 
+        {previaSemGestor && (
+          <InativacaoSemGestorModal
+            previa={previaSemGestor.previa}
+            usuarios={usuarios}
+            meuNome={authService.getUsuario()?.nome ?? 'você'}
+            enviando={inativando}
+            erro={erroSemGestor}
+            onConfirmar={(d) => executarInativacao(previaSemGestor.usuario, previaSemGestor.previa, d)}
+            onCancelar={() => { if (!inativando) setPreviaSemGestor(null); }}
+          />
+        )}
+
         <PapelModal
           isOpen={isPapelModalOpen}
           onClose={() => setIsPapelModalOpen(false)}
@@ -480,46 +618,60 @@ export default function UsuariosPage() {
                     setIsSenhaModalOpen(false);
                     setSenhaTarget(null);
                   }}
+                  aria-label="Fechar"
                   className="p-2 rounded-lg hover:bg-surface"
                 >
-                  <X size={20} />
+                  <X size={20} aria-hidden="true" />
                 </button>
               </div>
 
-              <form onSubmit={handleRedefinirSenha} className="p-6 space-y-4">
+              <form onSubmit={handleRedefinirSenha} noValidate className="p-6 space-y-4">
                 <p className="text-sm text-muted">
                   Definindo a nova senha de <strong className="text-ink">{senhaTarget.nome}</strong>. O usuário
                   precisará trocá-la no próximo login.
                 </p>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Nova senha *
+                  <label htmlFor="redefinir-novaSenha" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                    Nova senha <span className="text-danger" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="redefinir-novaSenha"
                     type="password"
+                    autoComplete="new-password"
                     value={novaSenha}
-                    onChange={(e) => setNovaSenha(e.target.value)}
-                    className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    placeholder="Mínimo de 6 caracteres"
+                    aria-invalid={!!senhaCampos.novaSenha || undefined}
+                    aria-describedby={senhaCampos.novaSenha ? 'redefinir-novaSenha-erro' : 'redefinir-ajuda'}
+                    onChange={(e) => { setNovaSenha(e.target.value); setSenhaCampos(c => ({ ...c, novaSenha: undefined })); }}
+                    className={`w-full p-2.5 border rounded-btn focus:outline-none focus:ring-4 ${senhaCampos.novaSenha ? 'border-danger focus:ring-danger/25' : 'border-line focus:border-focus focus:ring-focus/30'}`}
+                    placeholder="Mínimo de 8 caracteres"
                   />
+                  <InlineError id="redefinir-novaSenha-erro" message={senhaCampos.novaSenha} />
+                  {!senhaCampos.novaSenha && (
+                    <p id="redefinir-ajuda" className="text-xs text-muted mt-1">8 ou mais caracteres, combinando pelo menos 3 destes tipos: maiúscula, minúscula, número e caractere especial.</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Confirmar nova senha *
+                  <label htmlFor="redefinir-confirmar" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                    Confirmar nova senha <span className="text-danger" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="redefinir-confirmar"
                     type="password"
+                    autoComplete="new-password"
                     value={confirmarSenha}
-                    onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
+                    aria-invalid={!!senhaCampos.confirmarSenha || undefined}
+                    aria-describedby={senhaCampos.confirmarSenha ? 'redefinir-confirmar-erro' : undefined}
+                    onChange={(e) => { setConfirmarSenha(e.target.value); setSenhaCampos(c => ({ ...c, confirmarSenha: undefined })); }}
+                    className={`w-full p-2.5 border rounded-btn focus:outline-none focus:ring-4 ${senhaCampos.confirmarSenha ? 'border-danger focus:ring-danger/25' : 'border-line focus:border-focus focus:ring-focus/30'}`}
                     placeholder="Repita a nova senha"
                   />
+                  <InlineError id="redefinir-confirmar-erro" message={senhaCampos.confirmarSenha} />
                 </div>
 
                 {senhaError && (
-                  <p className="text-danger text-sm">{senhaError}</p>
+                  <p role="alert" className="text-danger text-sm">{senhaError}</p>
                 )}
 
                 <div className="flex gap-3 pt-2">

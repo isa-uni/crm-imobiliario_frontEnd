@@ -18,13 +18,12 @@ export function useInactivityLogout(options?: { timeoutMs?: number; warningMs?: 
 
   const logout = useCallback(() => {
     setShowWarning(false)
-    authService.logoutLocal()
-    // também tenta logout no servidor (blacklist)
     if (typeof window !== 'undefined') {
       // storage event para outras abas
       localStorage.setItem('crm:logout', Date.now().toString())
-      window.location.href = '/login?reason=inactivity'
     }
+    // logout no servidor: revoga o refresh token e coloca o access token na blacklist
+    authService.logout(true, 'inactivity')
   }, [])
 
   const reset = useCallback(() => {
@@ -34,8 +33,8 @@ export function useInactivityLogout(options?: { timeoutMs?: number; warningMs?: 
     if (intervalRef.current) clearInterval(intervalRef.current)
     setShowWarning(false)
 
-    // sem token = sem timer
-    if (!authService.getToken() && !authService.getUsuario()) return
+    // sem sessão = sem timer
+    if (!authService.getUsuario()) return
 
     warningRef.current = setTimeout(() => {
       setShowWarning(true)
@@ -74,15 +73,21 @@ export function useInactivityLogout(options?: { timeoutMs?: number; warningMs?: 
     }
     events.forEach(e => window.addEventListener(e, throttledHandler, { passive: true }))
     document.addEventListener('visibilitychange', handler)
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'crm:logout') logout()
-    })
+    // outra aba já fez o logout no servidor: aqui basta limpar a sessão local, sem re-propagar
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'crm:logout') {
+        authService.logoutLocal()
+        window.location.href = '/login?reason=inactivity'
+      }
+    }
+    window.addEventListener('storage', onStorage)
 
     reset()
 
     return () => {
       events.forEach(e => window.removeEventListener(e, throttledHandler as any))
       document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('storage', onStorage)
       if (timerRef.current) clearTimeout(timerRef.current)
       if (warningRef.current) clearTimeout(warningRef.current)
       if (intervalRef.current) clearInterval(intervalRef.current)

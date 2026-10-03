@@ -16,21 +16,22 @@ export default function GlobalError({
   }, [error])
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-8">
+    <div role="alert" className="min-h-screen bg-surface flex items-center justify-center p-4 sm:p-8">
       <div className="bg-card border border-line rounded-card shadow-card-lg p-8 max-w-lg w-full text-center">
         <div className="mx-auto w-16 h-16 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
           <AlertTriangle size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-ink">Ops, algo deu errado</h2>
+        <h2 className="text-2xl font-bold text-ink">Não foi possível carregar esta página</h2>
         <p className="text-sm text-muted mt-2">
-          Não foi possível carregar esta página. Tente novamente ou volte ao início.
+          Ocorreu um erro inesperado. Tente novamente ou volte ao Dashboard.
+          {error?.digest && <> Se o problema persistir, informe ao suporte o código de referência abaixo.</>}
         </p>
         {error?.digest && (
           <p className="text-xs text-muted mt-2 font-mono bg-surface p-2 rounded-btn border border-line break-all">
-            ID: {error.digest}
+            Código de referência: {error.digest}
           </p>
         )}
-        <div className="mt-6 flex gap-3 justify-center">
+        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => reset()}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover"

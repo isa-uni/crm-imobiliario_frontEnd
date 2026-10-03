@@ -1,22 +1,24 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react'
+import { adicionarToast, duracaoPadrao, ROTULO_TIPO, type ToastItem, type ToastType } from '@/lib/toastFila'
 
-type ToastType = 'success' | 'error' | 'warning' | 'info'
-interface Toast {
-  id: string
-  type: ToastType
-  message: string
-  duration?: number
-}
+export type { ToastType }
+
+/** Opções do toast. Número = duração em ms (compatível com a assinatura antiga). */
+export type ToastOptions = number | { title?: string; duration?: number }
 
 interface ToastContextValue {
-  toast: (msg: string, type?: ToastType, duration?: number) => void
-  success: (msg: string) => void
-  error: (msg: string) => void
-  warning: (msg: string) => void
-  info: (msg: string) => void
+  /**
+   * Mostra um toast. Use `title` para dizer O QUE aconteceu e `message` para o motivo/resultado:
+   * toast('Já existe um usuário com este e-mail.', 'error', { title: 'Não foi possível cadastrar o usuário' })
+   */
+  toast: (msg: string, type?: ToastType, options?: ToastOptions) => void
+  success: (msg: string, options?: ToastOptions) => void
+  error: (msg: string, options?: ToastOptions) => void
+  warning: (msg: string, options?: ToastOptions) => void
+  info: (msg: string, options?: ToastOptions) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -27,48 +29,96 @@ export function useToast() {
   return ctx
 }
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([])
+const ESTILO: Record<ToastType, string> = {
+  error: 'bg-danger-bg border-danger-border text-danger',
+  success: 'bg-success-bg border-success-border text-success',
+  warning: 'bg-warning-bg border-warning-border text-warning',
+  info: 'bg-info-bg border-info-border text-info',
+}
+const ICONE = { error: AlertCircle, success: CheckCircle, warning: AlertTriangle, info: Info }
 
-  const toast = useCallback((message: string, type: ToastType = 'info', duration = 4000) => {
-    const id = Math.random().toString(36).slice(2, 9)
-    setToasts(prev => [...prev, { id, type, message, duration }])
-    if (duration > 0) {
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id))
-      }, duration)
-    }
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+
+  const remover = useCallback((id: string) => {
+    const t = timers.current.get(id)
+    if (t) clearTimeout(t)
+    timers.current.delete(id)
+    setToasts(prev => prev.filter(x => x.id !== id))
   }, [])
 
-  const value: ToastContextValue = {
+  const agendar = useCallback((id: string, duracao: number) => {
+    const anterior = timers.current.get(id)
+    if (anterior) clearTimeout(anterior)
+    if (duracao > 0) timers.current.set(id, setTimeout(() => remover(id), duracao))
+  }, [remover])
+
+  const toast = useCallback((message: string, type: ToastType = 'info', options?: ToastOptions) => {
+    const opts = typeof options === 'number' ? { duration: options } : (options ?? {})
+    const duration = opts.duration ?? duracaoPadrao(type, message, opts.title)
+    const id = Math.random().toString(36).slice(2, 9)
+    setToasts(prev => {
+      const r = adicionarToast(prev, { id, type, message, title: opts.title, duration })
+      // toasts que saíram da fila por excesso: limpa os temporizadores
+      prev.filter(p => !r.lista.some(n => n.id === p.id)).forEach(p => {
+        const t = timers.current.get(p.id); if (t) clearTimeout(t); timers.current.delete(p.id)
+      })
+      queueMicrotask(() => agendar(r.id, duration))
+      return r.lista
+    })
+  }, [agendar])
+
+  useEffect(() => {
+    const mapa = timers.current
+    return () => { mapa.forEach(t => clearTimeout(t)); mapa.clear() }
+  }, [])
+
+  const value = useMemo<ToastContextValue>(() => ({
     toast,
-    success: (m) => toast(m, 'success'),
-    error: (m) => toast(m, 'error', 5000),
-    warning: (m) => toast(m, 'warning'),
-    info: (m) => toast(m, 'info'),
-  }
+    success: (m, o) => toast(m, 'success', o),
+    error: (m, o) => toast(m, 'error', o),
+    warning: (m, o) => toast(m, 'warning', o),
+    info: (m, o) => toast(m, 'info', o),
+  }), [toast])
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none max-w-[420px] w-[calc(100%-2rem)]">
+      {/* topo à direita no desktop; largura total (com margem) no celular */}
+      <div
+        aria-label="Notificações do sistema"
+        className="fixed top-3 inset-x-3 sm:inset-x-auto sm:right-4 sm:top-4 z-[9999] flex flex-col gap-2.5 pointer-events-none sm:w-[400px]"
+      >
         {toasts.map(t => {
-          const bg = t.type === 'error' ? 'bg-danger-bg border-danger-border text-danger' : t.type === 'success' ? 'bg-success-bg border-success-border text-success' : t.type === 'warning' ? 'bg-warning-bg border-warning-border text-warning' : 'bg-info-bg border-info-border text-info'
-          const Icon = t.type === 'error' ? AlertCircle : t.type === 'success' ? CheckCircle : t.type === 'warning' ? AlertTriangle : Info
+          const Icon = ICONE[t.type]
           return (
             <div
               key={t.id}
               role={t.type === 'error' ? 'alert' : 'status'}
-              className={`pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-card shadow-card-lg border text-sm font-medium leading-snug ${bg} animate-in slide-in-from-top-2`}
+              aria-live={t.type === 'error' ? 'assertive' : 'polite'}
+              aria-atomic="true"
+              onMouseEnter={() => { const x = timers.current.get(t.id); if (x) clearTimeout(x) }}
+              onMouseLeave={() => agendar(t.id, Math.max(2500, t.duration / 2))}
+              onFocus={() => { const x = timers.current.get(t.id); if (x) clearTimeout(x) }}
+              onBlur={() => agendar(t.id, Math.max(2500, t.duration / 2))}
+              className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-card shadow-card-lg border text-sm leading-snug ${ESTILO[t.type]} motion-safe:animate-toast-in`}
             >
-              <Icon size={18} className="mt-0.5 shrink-0" />
-              <p className="flex-1 break-words">{t.message}</p>
+              <Icon size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 min-w-0">
+                <span className="sr-only">{ROTULO_TIPO[t.type]}: </span>
+                {t.title && <p className="font-semibold break-words">{t.title}</p>}
+                <p className={`break-words ${t.title ? 'mt-0.5 font-normal' : 'font-medium'}`}>
+                  {t.message}
+                  {t.repeticoes > 1 && <span className="ml-1.5 text-xs opacity-75">({t.repeticoes}×)</span>}
+                </p>
+              </div>
               <button
-                onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
-                className="shrink-0 -mr-1 -my-1 p-1.5 rounded-btn hover:bg-ink/10"
-                aria-label="Fechar"
+                onClick={() => remover(t.id)}
+                className="shrink-0 -mr-1 -my-1 p-1.5 rounded-btn hover:bg-ink/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                aria-label={`Fechar mensagem: ${t.title ?? t.message}`}
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             </div>
           )

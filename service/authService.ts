@@ -1,17 +1,11 @@
 import { api } from "./api"
 import type { LoginResponse, UsuarioAutenticado } from "@/types"
 
-const TOKEN_KEY = "token"
 const USUARIO_KEY = "usuario"
 
-function parseJwtExp(token: string): number | null {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]))
-    if (payload.exp) return payload.exp * 1000
-    return null
-  } catch { return null }
-}
-
+// O token de acesso fica apenas em cookie httpOnly (inacessível ao JavaScript). No navegador guardamos
+// somente os dados públicos do usuário logado para montar a interface; quem decide se a sessão ainda
+// é válida é o backend (401 → refresh automático em api.ts → login).
 export const authService = {
   async login(email: string, senha: string): Promise<LoginResponse> {
     const response = await api.post("/login", { email, senha })
@@ -19,27 +13,20 @@ export const authService = {
   },
 
   salvarSessao(loginResponse: LoginResponse) {
-    // httpOnly: token fica em cookie, mas mantém em localStorage para fallback e expiração client
-    if (loginResponse.token) localStorage.setItem(TOKEN_KEY, loginResponse.token)
     localStorage.setItem(USUARIO_KEY, JSON.stringify(loginResponse.usuario))
   },
 
-  async logout(redirect = true) {
+  async logout(redirect = true, reason = "logout") {
+    // revoga refresh token e coloca o access token na blacklist no servidor
     try { await api.post("/auth/logout", {}, { withCredentials: true }) } catch {}
-    localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USUARIO_KEY)
     if (redirect && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-      window.location.href = "/login?reason=logout"
+      window.location.href = `/login?reason=${reason}`
     }
   },
 
   logoutLocal() {
-    localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USUARIO_KEY)
-  },
-
-  getToken(): string | null {
-    return typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null
   },
 
   getUsuario(): UsuarioAutenticado | null {
@@ -58,18 +45,8 @@ export const authService = {
     if (usuario) localStorage.setItem(USUARIO_KEY, JSON.stringify({ ...usuario, nome: dados.nome, email: dados.email }))
   },
 
-  isExpired(): boolean {
-    const t = this.getToken()
-    if (!t) return true
-    const exp = parseJwtExp(t)
-    if (exp == null) return false
-    return Date.now() >= exp
-  },
-
   isAuthenticated(): boolean {
-    const t = this.getToken()
-    if (!t) return false
-    return !this.isExpired()
+    return this.getUsuario() != null
   },
 
   async fetchMe(): Promise<UsuarioAutenticado | null> {

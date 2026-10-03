@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Lead } from '@/types';
+import { Lead, LeadStatus } from '@/types';
+import { contagemCumulativa } from '@/lib/funil';
 import { 
   TrendingUp, 
   Target, 
@@ -21,7 +22,8 @@ import { metaService, MetaDTO } from '@/service/metaService';
 import { authService } from '@/service/authService';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
-import { ErrorState } from '@/components/ui/ErrorState';
+import { ErrorState, InlineError } from '@/components/ui/ErrorState';
+import { notificarErro, textoDoErro, plural } from '@/lib/feedback';
 
 interface MetaConfig { //quantos leads equivalem a 1 contrato:
   contratos: number;
@@ -39,6 +41,12 @@ export default function SalesClock() {
   const router = useRouter();
   const { toast } = useToast();
   const [metaMensal, setMetaMensal] = useState<number>(1);
+  const [metaErro, setMetaErro] = useState<string | null>(null);
+  // a tela calcula o percentual dividindo pela meta: zero, vazio ou fração não podem ser aceitos
+  const problemaMeta = (n: number) =>
+    !Number.isFinite(n) || n === 0 ? 'Informe uma meta de pelo menos 1 contrato.'
+      : !Number.isInteger(n) ? 'Informe a meta em número inteiro de contratos.'
+      : n < 1 ? 'Informe uma meta de pelo menos 1 contrato.' : null;
   const [metaPropria, setMetaPropria] = useState<MetaDTO | null>(null);
   const [metaGestor, setMetaGestor] = useState<MetaDTO | null>(null);
   const [showSetup, setShowSetup] = useState(false); //tela da meta
@@ -72,10 +80,8 @@ export default function SalesClock() {
       setLeads(allLeads);
       setLeadsError(null);
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      setLeadsError(parsed.message);
-      toast(parsed.message, 'error');
-      console.error('Erro ao carregar leads', e);
+      // exibido uma vez, no bloco da tela, com "Tentar novamente" (antes: também um toast repetido)
+      setLeadsError(textoDoErro(parseApiError(e)));
     }
   };
 
@@ -95,14 +101,10 @@ export default function SalesClock() {
         setShowSetup(true); //tela para cadastrar a meta
       }
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      const status = parsed.status ?? e?.response?.status;
-      if (status === 401 || status === 403) {
-        router.push('/login?reason=expired');
-        return;
-      }
-      toast(parsed.message, 'error');
-      console.error('Erro ao carregar meta', e);
+      // 403 é falta de permissão, não sessão expirada: antes os dois mandavam para o login com
+      // "Sua sessão expirou", escondendo o motivo real. Sessão expirada já é tratada pelo cliente HTTP.
+      const parsed = notificarErro(toast, 'Não foi possível carregar a sua meta do mês', e);
+      if (parsed.tipo === 'sessao_expirada') return;
       setShowSetup(true);
     } finally {
       setLoadingMeta(false);
@@ -127,10 +129,7 @@ export default function SalesClock() {
           return fresh;
         }
         // NÃO válida -> sessão expirada
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('usuario');
-        }
+        authService.logoutLocal();
         return null;
       } catch {
         // erro de rede na validação -> mantém temporário para não quebrar UX
@@ -170,14 +169,9 @@ export default function SalesClock() {
       // recarrega para refletir a meta própria recém-salva junto da meta do gestor (se houver)
       await loadMeta();
       setShowSetup(false);
+      toast(`Sua meta de ${plural(contratos, 'contrato', 'contratos')} para ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })} foi salva.`, 'success');
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      const status = parsed.status ?? e?.response?.status;
-      if (status === 401 || status === 403) {
-        router.push('/login?reason=expired');
-        return;
-      }
-      toast(parsed.message, 'error');
+      notificarErro(toast, 'Não foi possível salvar a sua meta', e);
     } finally {
       setSavingMeta(false);
     }
@@ -193,22 +187,18 @@ export default function SalesClock() {
       return dataLead >= inicio && dataLead <= fim;
     });
 
+    // contagem cumulativa — mesma regra do FunilDashboard: um lead conta na própria etapa e em
+    // todas as anteriores (um lead "aprovado" passou por oportunidade, visitas e pasta)
+    const ateEtapa = (etapa: LeadStatus) => contagemCumulativa(leadsDoMes, etapa);
+
     return {
       leads: leadsDoMes.length,
-      oportunidades: leadsDoMes.filter(l => 
-        ['oportunidade', 'visita-agendada', 'visita-realizada', 'pasta', 'contrato'].includes(l.status)
-      ).length,
-      visitasAgendadas: leadsDoMes.filter(l => 
-        ['visita-agendada', 'visita-realizada', 'pasta', 'contrato'].includes(l.status)
-      ).length,
-      visitasRealizadas: leadsDoMes.filter(l => 
-        ['visita-realizada', 'pasta', 'contrato'].includes(l.status)
-      ).length,
-      pastas: leadsDoMes.filter(l => 
-        ['pasta', 'contrato'].includes(l.status)
-      ).length,
-      aprovados: leadsDoMes.filter(l => l.status === 'contrato').length,
-      contratos: leadsDoMes.filter(l => l.status === 'contrato').length,
+      oportunidades: ateEtapa('oportunidade'),
+      visitasAgendadas: ateEtapa('visita-agendada'),
+      visitasRealizadas: ateEtapa('visita-realizada'),
+      pastas: ateEtapa('pasta'),
+      aprovados: ateEtapa('aprovado'),
+      contratos: ateEtapa('contrato'),
     };
   }, [leads, selectedMonth]);
 
@@ -361,16 +351,23 @@ export default function SalesClock() {
           )}
 
           <div className="mb-6">
-            <label className="block text-sm font-bold text-muted uppercase mb-2">
-              Meta de Contratos
+            <label htmlFor="metaMensal" className="block text-sm font-bold text-muted uppercase mb-2">
+              Meta de contratos
             </label>
             <input
+              id="metaMensal"
               type="number"
-              value={metaMensal}
-              onChange={(e) => setMetaMensal(Number(e.target.value))}
-              className="w-full text-4xl font-bold p-4 border-2 border-line rounded-xl focus:border-accent focus:outline-none text-center text-brand-fg"
+              inputMode="numeric"
+              step={1}
+              value={Number.isNaN(metaMensal) ? '' : metaMensal}
+              onChange={(e) => { setMetaMensal(e.target.value === '' ? NaN : Number(e.target.value)); setMetaErro(null); }}
+              onBlur={() => setMetaErro(problemaMeta(metaMensal))}
+              aria-invalid={!!metaErro || undefined}
+              aria-describedby={metaErro ? 'metaMensal-erro' : undefined}
+              className={`w-full text-4xl font-bold p-4 border-2 rounded-xl focus:outline-none text-center text-brand-fg ${metaErro ? 'border-danger' : 'border-line focus:border-accent'}`}
               min="1"
             />
+            <InlineError id="metaMensal-erro" message={metaErro ?? undefined} />
           </div>
 
           <div className="bg-info-bg p-4 rounded-lg text-sm text-info mb-6">
@@ -389,11 +386,16 @@ export default function SalesClock() {
           </div>
 
           <button
-            onClick={() => saveMeta(metaMensal)}
+            onClick={() => {
+              const p = problemaMeta(metaMensal);
+              setMetaErro(p);
+              if (p) { document.getElementById('metaMensal')?.focus(); return; }
+              saveMeta(metaMensal);
+            }}
             disabled={savingMeta}
             className="w-full bg-brand hover:bg-brand-hover text-on-brand font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50"
           >
-            {savingMeta ? 'Salvando...' : 'Iniciar Mês'}
+            {savingMeta ? 'Salvando meta...' : 'Iniciar mês'}
           </button>
         </div>
       </div>
@@ -434,7 +436,7 @@ export default function SalesClock() {
 
         {leadsError && (
           <div className="mb-6">
-            <ErrorState message={leadsError} onRetry={loadData} />
+            <ErrorState message="Não foi possível carregar os seus leads." details={leadsError} onRetry={loadData} />
           </div>
         )}
 

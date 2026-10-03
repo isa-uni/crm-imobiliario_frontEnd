@@ -23,13 +23,12 @@ import Funil from "@/components/FunilDashboard";
 import LeadOrigemChart from "@/components/LeadOrigemChart";
 import LeadImovelChart from "@/components/LeadImovelChart";
 import LeadsContratosTimelineChart from "@/components/LeadsContratosTimelineChart";
-import { useToast } from '@/components/ui/ToastProvider';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { parseApiError } from '@/lib/errorHandler';
+import { textoDoErro } from '@/lib/feedback';
 
 
 export default function Dashboard() {
-  const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [nome, setNome] = useState<string>('');
@@ -47,7 +46,9 @@ export default function Dashboard() {
     setError(null);
     try {
       const [dataLead, dataImovel] = await Promise.all([
-        leadService.getAll({ page: 0, size: 20 }),
+        // lista completa (já restrita ao escopo do usuário pelo backend): as métricas do mês e os
+        // gráficos precisam de todos os leads, não só da primeira página
+        leadService.getAll(),
         imovelService.getAll(),
       ]);
       const list = Array.isArray((dataLead as any)?.content) ? (dataLead as any).content : Array.isArray(dataLead) ? dataLead : [];
@@ -55,9 +56,8 @@ export default function Dashboard() {
       const listImovel = Array.isArray((dataImovel as any)?.content) ? (dataImovel as any).content : Array.isArray(dataImovel) ? dataImovel : [];
       setImoveis(Array.isArray(listImovel) ? listImovel : []);
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      setError(parsed.message);
-      toast(parsed.message, 'error');
+      // exibido uma vez, no lugar do painel, com "Tentar novamente" (antes: também um toast repetido)
+      setError(textoDoErro(parseApiError(e)));
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,7 @@ export default function Dashboard() {
             <p className="text-muted animate-pulse">Carregando dashboard...</p>
           </div>
         ) : error ? (
-          <ErrorState message={error} onRetry={loadData} />
+          <ErrorState message="Não foi possível carregar o painel." details={error} onRetry={loadData} />
         ) : (
           <>
         {/* Cards Principais - 4 métricas essenciais */}

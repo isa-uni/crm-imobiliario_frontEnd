@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Campo, inputBase } from '@/components/ui/Campo';
+import { useValidacao, classeErro } from '@/hooks/useValidacao';
+import { campo, problemaInteiroNaoNegativo, problemaTamanho, type Regras } from '@/lib/validacao';
 import { Imovel } from '@/types';
 import { imovelService } from '@/service/imovelService';
 import {
@@ -19,6 +22,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
+import { notificarErro, textoDoErro } from '@/lib/feedback';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ErrorState } from '@/components/ui/ErrorState';
 
 type ImovelForm = Omit<Imovel, 'id' | 'dataCadastro' | 'dataAtualizacao' | 'valorVenda'> & { valorVenda: number | null };
@@ -55,6 +60,31 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ImovelForm>(FORM_VAZIO);
+  const [salvando, setSalvando] = useState(false);
+  // mesmas regras e mensagens do backend (ImovelDTO / ImovelAtualizacaoDTO)
+  const regras = useMemo<Regras<ImovelForm>>(() => ({
+    titulo: campo('Informe o título do imóvel.', x => problemaTamanho(x, 255, 'O título')),
+    status: campo('Selecione o status do imóvel.'),
+    endereco: campo('Informe o endereço do imóvel.', x => problemaTamanho(x, 255, 'O endereço')),
+    bairro: campo('Informe o bairro do imóvel.', x => problemaTamanho(x, 255, 'O bairro')),
+    cidade: campo('Informe a cidade do imóvel.', x => problemaTamanho(x, 255, 'A cidade')),
+    valorVenda: (x) => x == null || Number.isNaN(x) ? 'Informe o valor de venda do imóvel.'
+      : !Number.isInteger(x) ? 'Informe o valor de venda em reais, sem centavos.'
+      : x <= 0 ? 'Informe um valor de venda maior que zero.' : null,
+    area: (x) => problemaInteiroNaoNegativo(x, 'A área', 'A área não pode ser negativa.'),
+    quartos: (x) => problemaInteiroNaoNegativo(x, 'A quantidade de quartos', 'A quantidade de quartos não pode ser negativa.'),
+    banheiros: (x) => problemaInteiroNaoNegativo(x, 'A quantidade de banheiros', 'A quantidade de banheiros não pode ser negativa.'),
+    vagas: (x) => problemaInteiroNaoNegativo(x, 'A quantidade de vagas', 'A quantidade de vagas não pode ser negativa.'),
+    descricao: (x) => problemaTamanho(x, 255, 'A descrição'),
+  }), []);
+  const v = useValidacao<ImovelForm>(regras);
+  const alterar = (nome: keyof ImovelForm, valor: any) => {
+    const novo = { ...formData, [nome]: valor } as ImovelForm;
+    setFormData(novo);
+    v.aoAlterar(nome, novo);
+  };
+  const cls = (nome: string) => `${inputBase} ${classeErro(!!v.erros[nome])}`;
+  const confirmar = useConfirm();
 
   useEffect(() => {
     loadData();
@@ -71,15 +101,15 @@ export default function PropertiesPage() {
     try {
       setImoveis(await imovelService.getAll());
     } catch (e: any) {
-      const parsed = parseApiError(e);
-      setLoadError(parsed.message);
-      toast(parsed.message, 'error');
+      // erro exibido uma única vez, no lugar da lista, com "Tentar novamente" (antes: também um toast repetido)
+      setLoadError(textoDoErro(parseApiError(e)));
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async (imovelData: Omit<Imovel, 'id' | 'dataCadastro' | 'dataAtualizacao'>) => {
+    setSalvando(true);
     try {
       setErrors({});
       const isEditing = !!editingImovel;
@@ -91,15 +121,15 @@ export default function PropertiesPage() {
 
       await loadData();
       closeModal();
-      toast(isEditing ? 'Imóvel atualizado com sucesso.' : 'Imóvel cadastrado com sucesso.', 'success');
+      toast(isEditing ? `Imóvel "${imovelData.titulo}" atualizado com sucesso.` : `Imóvel "${imovelData.titulo}" cadastrado com sucesso.`, 'success');
     } catch (error: any) {
       const parsed = parseApiError(error);
-      if (parsed.fields) {
-        setErrors(parsed.fields);
-        toast('Existem campos inválidos. Verifique os campos destacados.', 'warning');
-      } else {
-        toast(parsed.message, 'error');
-      }
+      if (parsed.tipo === 'sessao_expirada') return;
+      // erro de campo junto ao campo; os demais no topo do formulário (antes: toast genérico "campos inválidos")
+      if (parsed.fields && Object.keys(parsed.fields).length) v.aplicarErrosServidor(parsed.fields);
+      else setErrors({ geral: textoDoErro(parsed) });
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -121,18 +151,27 @@ export default function PropertiesPage() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este imóvel?')) return;
+  const handleDelete = async (imovel: Imovel) => {
+    // o backend inativa o imóvel (ImovelService.inativarImovel): some da lista, mas o cadastro é mantido
+    const ok = await confirmar({
+      titulo: `Excluir o imóvel "${imovel.titulo}"?`,
+      mensagem: 'O imóvel deixará de aparecer na lista de imóveis. O cadastro fica guardado no sistema, mas não há como reexibi-lo por esta tela.',
+      confirmarLabel: 'Excluir imóvel',
+      perigo: true,
+    });
+    if (!ok) return;
     try {
-      await imovelService.inativar(id);
+      await imovelService.inativar(imovel.id);
       await loadData();
-      toast('Imóvel excluído com sucesso.', 'success');
+      toast(`Imóvel "${imovel.titulo}" removido da lista.`, 'success');
     } catch (e: any) {
-      toast(parseApiError(e).message, 'error');
+      notificarErro(toast, `Não foi possível excluir o imóvel "${imovel.titulo}"`, e);
     }
   };
 
   const closeModal = () => {
+    setErrors({});
+    v.limpar();
     setIsModalOpen(false);
     setEditingImovel(null);
     setFormData(FORM_VAZIO);
@@ -205,10 +244,10 @@ export default function PropertiesPage() {
         {/* Grid de Imóveis */}
         {loading ? (
           <div className="bg-card border border-line rounded-card shadow-card p-12 text-center">
-            <p className="text-muted animate-pulse">Carregando imóveis...</p>
+            <p className="text-muted motion-safe:animate-pulse" role="status">Carregando imóveis...</p>
           </div>
         ) : loadError ? (
-          <ErrorState message={loadError} onRetry={loadData} />
+          <ErrorState message="Não foi possível carregar os imóveis." details={loadError} onRetry={loadData} />
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -272,7 +311,7 @@ export default function PropertiesPage() {
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(imovel.id)}
+                          onClick={() => handleDelete(imovel)}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-danger-bg text-danger hover:bg-danger-bg rounded-btn text-sm font-semibold transition-colors"
                         >
                           <Trash2 size={16} />
@@ -298,8 +337,12 @@ export default function PropertiesPage() {
         {isModalOpen && (
           <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center z-50 p-4">
             <form
+                ref={v.formRef as any}
+                noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
+                  // antes: o navegador avisava só o 1º campo vazio; números negativos e valor zero passavam
+                  if (!v.validarTudo(formData)) return;
                   handleSave({
                       ...formData,
                       valorVenda: formData.valorVenda!,
@@ -314,140 +357,75 @@ export default function PropertiesPage() {
               </div>
 
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted mb-1">Título <span className="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.titulo}
-                      onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                      placeholder="Ex: Apartamento Moderno no Centro"
-                    />
-                    {errors.titulo && <p className="text-xs text-danger mt-1.5">{errors.titulo}</p>}
+                {errors.geral && (
+                  <div role="alert" className="bg-danger-bg border border-danger-border px-4 py-3 text-sm text-danger rounded-btn">
+                    <p className="font-semibold">{editingImovel ? 'Não foi possível salvar as alterações do imóvel.' : 'Não foi possível cadastrar o imóvel.'}</p>
+                    <p className="mt-0.5">{errors.geral}</p>
                   </div>
+                )}
+                {Object.keys(v.erros).length > 1 && (
+                  <p role="alert" className="text-sm text-danger">Preencha os {Object.keys(v.erros).length} campos destacados antes de continuar.</p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Campo nome="titulo" rotulo="Título" obrigatorio erro={v.erros.titulo} className="md:col-span-2">
+                    <input id="titulo" type="text" maxLength={255} value={formData.titulo}
+                      onChange={(e) => alterar('titulo', e.target.value)} {...v.ligar('titulo', formData)}
+                      className={cls('titulo')} placeholder="Ex.: Apartamento moderno no Centro" />
+                  </Campo>
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Status <span className="text-danger">*</span></label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Imovel['status'] })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    >
+                  <Campo nome="status" rotulo="Status" obrigatorio erro={v.erros.status}>
+                    <select id="status" value={formData.status} onChange={(e) => alterar('status', e.target.value)}
+                      {...v.ligar('status', formData)} className={cls('status')}>
                       <option value="disponivel">Disponível</option>
                       <option value="vendido">Vendido</option>
                     </select>
-                  </div>
+                  </Campo>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted mb-1">Endereço <span className="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.endereco}
-                      onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.endereco && <p className="text-xs text-danger mt-1.5">{errors.endereco}</p>}
-                  </div>
+                  <Campo nome="endereco" rotulo="Endereço" obrigatorio erro={v.erros.endereco} className="md:col-span-2">
+                    <input id="endereco" type="text" maxLength={255} value={formData.endereco}
+                      onChange={(e) => alterar('endereco', e.target.value)} {...v.ligar('endereco', formData)}
+                      className={cls('endereco')} placeholder="Ex.: Rua Sergipe, 1000" />
+                  </Campo>
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Bairro <span className="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.bairro}
-                      onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.bairro && <p className="text-xs text-danger mt-1.5">{errors.bairro}</p>}
-                  </div>
+                  <Campo nome="bairro" rotulo="Bairro" obrigatorio erro={v.erros.bairro}>
+                    <input id="bairro" type="text" maxLength={255} value={formData.bairro}
+                      onChange={(e) => alterar('bairro', e.target.value)} {...v.ligar('bairro', formData)}
+                      className={cls('bairro')} />
+                  </Campo>
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Cidade <span className="text-danger">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.cidade}
-                      onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.cidade && <p className="text-xs text-danger mt-1.5">{errors.cidade}</p>}
-                  </div>
+                  <Campo nome="cidade" rotulo="Cidade" obrigatorio erro={v.erros.cidade}>
+                    <input id="cidade" type="text" maxLength={255} value={formData.cidade}
+                      onChange={(e) => alterar('cidade', e.target.value)} {...v.ligar('cidade', formData)}
+                      className={cls('cidade')} />
+                  </Campo>
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Valor Venda <span className="text-danger">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.valorVenda ?? ''}
-                      onChange={(e) => setFormData({
-                        ...formData, 
-                        valorVenda: e.target.value === '' ? null : Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30 no-spinner"
-                    />
-                    {errors.valorVenda && <p className="text-xs text-danger mt-1.5">{errors.valorVenda}</p>}
-                  </div>
+                  <Campo nome="valorVenda" rotulo="Valor de venda (R$)" obrigatorio erro={v.erros.valorVenda}
+                    ajuda="Somente números, sem pontos. Ex.: 350000">
+                    <input id="valorVenda" type="number" inputMode="numeric" min={1} step={1} value={formData.valorVenda ?? ''}
+                      onChange={(e) => alterar('valorVenda', e.target.value === '' ? null : Number(e.target.value))}
+                      {...v.ligar('valorVenda', formData)} className={`${cls('valorVenda')} no-spinner`} placeholder="350000" />
+                  </Campo>
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Área (m²)</label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.area && <p className="text-xs text-danger mt-1.5">{errors.area}</p>}
-                  </div>
+                  {([
+                    ['area', 'Área (m²)'],
+                    ['quartos', 'Quartos'],
+                    ['banheiros', 'Banheiros'],
+                    ['vagas', 'Vagas'],
+                  ] as const).map(([nome, rotulo]) => (
+                    <Campo key={nome} nome={nome} rotulo={rotulo} erro={v.erros[nome]}>
+                      <input id={nome} type="number" inputMode="numeric" min={0} step={1}
+                        value={Number.isNaN(formData[nome]) ? '' : formData[nome]}
+                        onChange={(e) => alterar(nome, e.target.value === '' ? 0 : Number(e.target.value))}
+                        {...v.ligar(nome, formData)} className={cls(nome)} />
+                    </Campo>
+                  ))}
 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Quartos</label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.quartos}
-                      onChange={(e) => setFormData({ ...formData, quartos: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.quartos && <p className="text-xs text-danger mt-1.5">{errors.quartos}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Banheiros</label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.banheiros}
-                      onChange={(e) => setFormData({ ...formData, banheiros: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.banheiros && <p className="text-xs text-danger mt-1.5">{errors.banheiros}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Vagas</label>
-                    <input
-                      type="number"
-                      required
-                      value={formData.vagas}
-                      onChange={(e) => setFormData({ ...formData, vagas: Number(e.target.value) })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                    />
-                    {errors.vagas && <p className="text-xs text-danger mt-1.5">{errors.vagas}</p>}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-muted mb-1">Descrição</label>
-                    <textarea
-                      value={formData.descricao}
-                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                      className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                      rows={3}
-                    />
-                    {errors.descricao && <p className="text-xs text-danger mt-1.5">{errors.descricao}</p>}
-                  </div>
+                  <Campo nome="descricao" rotulo="Descrição" erro={v.erros.descricao} className="md:col-span-2"
+                    ajuda={`${(formData.descricao ?? '').length}/255 caracteres`}>
+                    <textarea id="descricao" maxLength={255} value={formData.descricao}
+                      onChange={(e) => alterar('descricao', e.target.value)} {...v.ligar('descricao', formData)}
+                      className={cls('descricao')} rows={3} />
+                  </Campo>
                 </div>
               </div>
 
@@ -461,9 +439,10 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
+                  disabled={salvando}
+                  className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors disabled:opacity-60"
                 >
-                  {editingImovel ? 'Salvar Alterações' : 'Cadastrar Imóvel'}
+                  {salvando ? (editingImovel ? 'Salvando alterações...' : 'Cadastrando imóvel...') : editingImovel ? 'Salvar alterações' : 'Cadastrar imóvel'}
                 </button>
               </div>
             </form> 

@@ -1,6 +1,7 @@
 "use client";
 
-import { Lead, LeadStatus } from "@/types";
+import { Lead } from "@/types";
+import { contagemCumulativa } from "@/lib/funil";
 
 interface FunilProps {
   leads: Lead[];
@@ -16,20 +17,13 @@ const ETAPAS = [
   { status: "contrato", label: "Vendas", cor: "bg-chart-7" },
 ] as const;
 
-// mesma ordem usada no Relógio de Vendas: um lead com status mais avançado é contado como
-// tendo passado por todas as etapas anteriores, mesmo que tenha pulado etapas no meio do caminho
-const STATUS_ORDER: LeadStatus[] = ETAPAS.map((e) => e.status);
+// um lead com status mais avançado é contado como tendo passado por todas as etapas anteriores,
+// mesmo que tenha pulado etapas no meio do caminho (ordem compartilhada com o Relógio de Vendas)
 
 export default function Funil({ leads }: FunilProps) {
   const contagens: Record<string, number> = {};
-  ETAPAS.forEach((etapa, index) => {
-    if (index === 0) {
-      // topo do funil: todo lead que entrou conta aqui, independente do status atual
-      contagens[etapa.status] = leads.length;
-      return;
-    }
-    const statusValidos = STATUS_ORDER.slice(index);
-    contagens[etapa.status] = leads.filter((l) => statusValidos.includes(l.status)).length;
+  ETAPAS.forEach((etapa) => {
+    contagens[etapa.status] = contagemCumulativa(leads, etapa.status);
   });
 
   const rows = ETAPAS.map((etapa, index) => {

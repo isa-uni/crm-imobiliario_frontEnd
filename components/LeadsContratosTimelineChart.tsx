@@ -6,6 +6,7 @@ import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react"
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns"
 import { dashboardCorretorService, PontoMensalDTO } from "@/service/dashboardCorretorService"
 import { parseApiError } from "@/lib/errorHandler"
+import { textoDoErro } from "@/lib/feedback"
 import { useThemeColors, chartTooltipStyle } from "@/hooks/useThemeColors"
 
 type Periodo = 6 | 12
@@ -35,8 +36,7 @@ export default function LeadsContratosTimelineChart() {
       const res = await dashboardCorretorService.getTimeline({ inicio, fim })
       setData(res.timeline || [])
     } catch (e: any) {
-      const parsed = parseApiError(e)
-      setError(parsed.message)
+      setError(textoDoErro(parseApiError(e)))
     } finally {
       setLoading(false)
     }

@@ -6,8 +6,8 @@ import { X, Phone, Mail, Calendar, DollarSign, Building2, MapPin, FileText, Arro
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { leadService } from '@/service/leadService';
-import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
+import { textoDoErro } from '@/lib/feedback';
 import { InlineError } from '@/components/ui/ErrorState';
 import { formatarTelefone } from '@/lib/format';
 import { origemLabel } from '@/service/origemOptions';
@@ -21,7 +21,6 @@ interface LeadViewModalProps {
 }
 
 export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadViewModalProps) {
-  const { toast } = useToast();
   const [tramitacoes, setTramitacoes] = useState<Tramitacao[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [tramitacoesError, setTramitacoesError] = useState<string | null>(null);
@@ -37,11 +36,9 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
         setTramitacoesError(null);
       })
       .catch((err: any) => {
-        const parsed = parseApiError(err);
+        // erro secundário: o restante do lead continua visível; aviso só na seção do histórico
         setTramitacoes([]);
-        setTramitacoesError(parsed.message);
-        toast(parsed.message, 'error');
-        console.error('Erro ao carregar tramitações', err);
+        setTramitacoesError(`Não foi possível carregar o histórico de status. ${textoDoErro(parseApiError(err))}`);
       })
       .finally(() => setLoadingHistorico(false));
   }, [lead]);
@@ -228,8 +225,8 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
             {tramitacoesError && <InlineError message={tramitacoesError} />}
 
             {loadingHistorico ? (
-              <p className="text-sm text-muted">Carregando...</p>
-            ) : tramitacoes.length === 0 ? (
+              <p className="text-sm text-muted" role="status">Carregando histórico de status...</p>
+            ) : tramitacoesError ? null : tramitacoes.length === 0 ? (
               <div className="text-center py-8 text-muted">
                 <Calendar size={32} className="mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Sem movimentações registradas</p>
