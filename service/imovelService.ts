@@ -8,11 +8,6 @@ export const imovelService = {
     return response.data
   },
 
-  async getDisponivel() {
-    const response = await api.get("/imovel/disponivel")
-    return response.data
-  },
-
   async cadastrar(data: any) {
     const response = await api.post("/imovel/cadastrar", data)
     return response.data

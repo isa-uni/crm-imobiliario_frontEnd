@@ -7,3 +7,5 @@ export const origemOptions = [
   { value: 'ganhe_mais', label: 'Ganhe+' },
   { value: 'oferta_ativa', label: 'Oferta Ativa' },
 ];
+
+export const origemLabel = (value: string) => origemOptions.find(o => o.value === value)?.label || value;

@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Lead, Imovel, Metrics } from '@/types';
-// import { getLeads } from '@/lib/data';
-// import { getImoveis } from '@/lib/imoveis';
+import { Lead, Imovel } from '@/types';
 import { 
   TrendingUp, 
   Users, 
@@ -34,7 +32,6 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [nome, setNome] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,16 +46,14 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [dataLead, dataImovel, dataMetrics] = await Promise.all([
+      const [dataLead, dataImovel] = await Promise.all([
         leadService.getAll({ page: 0, size: 20 }),
         imovelService.getAll(),
-        leadService.getMetrics().catch(() => null),
       ]);
       const list = Array.isArray((dataLead as any)?.content) ? (dataLead as any).content : Array.isArray(dataLead) ? dataLead : [];
       setLeads(list.filter((x:any)=> x && x.id != null));
       const listImovel = Array.isArray((dataImovel as any)?.content) ? (dataImovel as any).content : Array.isArray(dataImovel) ? dataImovel : [];
       setImoveis(Array.isArray(listImovel) ? listImovel : []);
-      if (dataMetrics) setMetrics(dataMetrics);
     } catch (e: any) {
       const parsed = parseApiError(e);
       setError(parsed.message);

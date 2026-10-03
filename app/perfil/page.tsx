@@ -2,20 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Phone, Hash, Shield, Cake, Loader2, KeyRound, CheckCircle, ChevronLeft } from 'lucide-react';
+import { User, Mail, Phone, Hash, Shield, Cake, Loader2, KeyRound, CheckCircle } from 'lucide-react';
 import InputMask from 'react-input-mask';
 import { authService } from '@/service/authService';
 import { usuarioService } from '@/service/usuarioService';
 import type { Usuario } from '@/types';
 import { ThemeSelector } from '@/components/ui/ThemeToggle';
+import { formatarTelefoneInput } from '@/lib/format';
 
-const formatarTelefone = (telefone: string) => {
-  return (telefone || '')
-    .replace(/\D/g, '')
-    .replace(/^(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2')
-    .slice(0, 15);
-};
 
 const inputClass =
   'w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30';
@@ -34,7 +28,6 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  const [campoErro, setCampoErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -53,7 +46,7 @@ export default function PerfilPage() {
         nome: me.nome || '',
         email: me.email || '',
         genero: me.genero || 'M',
-        telefone: formatarTelefone(me.telefone),
+        telefone: formatarTelefoneInput(me.telefone),
         dataNascimento: me.dataNascimento || '',
       });
     } catch (err: any) {
@@ -71,32 +64,26 @@ export default function PerfilPage() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
-    setCampoErro(null);
 
     if (!form.nome.trim()) {
-      setCampoErro('nome');
       setError('Informe o nome.');
       return;
     }
     if (!form.email.trim()) {
-      setCampoErro('email');
       setError('Informe o e-mail.');
       return;
     }
     if (!form.telefone.trim()) {
-      setCampoErro('telefone');
       setError('Informe o telefone.');
       return;
     }
 
     const telefoneDigitos = form.telefone.replace(/\D/g, '');
     if (telefoneDigitos.length < 10 || telefoneDigitos.length > 11) {
-      setCampoErro('telefone');
       setError('Informe um telefone completo (DDD + número, 10 ou 11 dígitos).');
       return;
     }
     if (!form.dataNascimento) {
-      setCampoErro('dataNascimento');
       setError('Informe a data de nascimento.');
       return;
     }
@@ -138,13 +125,6 @@ export default function PerfilPage() {
     <div className="min-h-screen bg-surface">
       <header className="bg-sidebar border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
-          {/* <button
-            onClick={() => router.push('/dashboard')}
-            className="inline-flex items-center gap-1.5 text-sidebar-fg/80 hover:text-white mb-3 text-sm transition-colors"
-          >
-            <ChevronLeft size={18} />
-            Voltar ao painel
-          </button> */}
           <div className="flex items-center gap-3">
             <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-orange-600 flex items-center justify-center text-on-accent shadow-btn">
               <User size={26} />

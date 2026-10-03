@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Lead } from '@/types';
-// import { getLeads } from '@/lib/data';
 import { 
   TrendingUp, 
   Target, 
@@ -15,7 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, differenceInDays, isToday, isPast } from 'date-fns';
+import { format, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { leadService } from '@/service/leadService';
 import { metaService, MetaDTO } from '@/service/metaService';
@@ -40,7 +39,6 @@ export default function SalesClock() {
   const router = useRouter();
   const { toast } = useToast();
   const [metaMensal, setMetaMensal] = useState<number>(1);
-  const [metaId, setMetaId] = useState<number | null>(null);
   const [metaPropria, setMetaPropria] = useState<MetaDTO | null>(null);
   const [metaGestor, setMetaGestor] = useState<MetaDTO | null>(null);
   const [showSetup, setShowSetup] = useState(false); //tela da meta
@@ -48,7 +46,7 @@ export default function SalesClock() {
   const [savingMeta, setSavingMeta] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsError, setLeadsError] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(new Date()); //mes da analise | atual
+  const [selectedMonth] = useState(() => new Date()); //mes da analise | atual
 
   const ratios: MetaConfig['ratios'] = { //regras de conversão
     leads: 33,
@@ -92,7 +90,6 @@ export default function SalesClock() {
       const efetiva = resumo.metaEfetiva;
       if (efetiva) {
         setMetaMensal(efetiva.metaContratos);
-        setMetaId(efetiva.id);
         setShowSetup(false);
       } else {
         setShowSetup(true); //tela para cadastrar a meta
@@ -510,9 +507,6 @@ export default function SalesClock() {
           <h3 className="text-lg font-bold text-ink mb-4">
             Funil de Vendas - Atualização Automática
           </h3>
-          {/* <p className="text-sm text-muted mb-6">
-            Os valores são calculados automaticamente baseados nos leads cadastrados
-          </p> */}
 
           <div className="space-y-4">
             {metrics.map((metric) => {

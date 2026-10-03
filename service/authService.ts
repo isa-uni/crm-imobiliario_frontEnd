@@ -53,11 +53,6 @@ export const authService = {
     return this.getUsuario()?.trocarSenha === true
   },
 
-  marcarSenhaTrocada() {
-    const usuario = this.getUsuario()
-    if (usuario) localStorage.setItem(USUARIO_KEY, JSON.stringify({ ...usuario, trocarSenha: false }))
-  },
-
   atualizarUsuarioLocal(dados: { nome: string; email: string }) {
     const usuario = this.getUsuario()
     if (usuario) localStorage.setItem(USUARIO_KEY, JSON.stringify({ ...usuario, nome: dados.nome, email: dados.email }))
@@ -69,14 +64,6 @@ export const authService = {
     const exp = parseJwtExp(t)
     if (exp == null) return false
     return Date.now() >= exp
-  },
-
-  willExpireInMs(): number | null {
-    const t = this.getToken()
-    if (!t) return 0
-    const exp = parseJwtExp(t)
-    if (exp == null) return null
-    return exp - Date.now()
   },
 
   isAuthenticated(): boolean {

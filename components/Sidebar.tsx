@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/service/authService';
 import type { UsuarioAutenticado } from '@/types';
@@ -13,30 +13,59 @@ import {
   UserCog,
   BarChart3,
   FileText,
-  Settings,
   LogOut,
-  KeyRound,
   Menu,
   X,
   Building2,
   TrendingUp,
-  Calendar,
-  CheckCircle,
   Bell,
   AlertTriangle,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface SidebarProps {
   children: React.ReactNode;
 }
 
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  adminOnly?: boolean;
+  gestorOnly?: boolean;
+  corretorOnly?: boolean;
+}
+
+const MENU_ITEMS: MenuItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
+  { id: 'dashboard-gestor', label: 'Dashboard Gestor', icon: BarChart3, path: '/dashboard/gestor', gestorOnly: true },
+  { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },
+  { id: 'relogio-vendas', label: 'Relógio de Vendas', icon: TrendingUp, path: '/relogio-vendas' },
+  { id: 'leads-exportar', label: 'Exportar Leads', icon: FileText, path: '/leads/exportar', corretorOnly: true },
+  { id: 'properties', label: 'Imóveis', icon: Building2, path: '/properties' },
+  { id: 'empreendimentos', label: 'Empreendimentos', icon: Building2, path: '/empreendimentos' },
+  { id: 'equipes', label: 'Equipes', icon: Building2, path: '/equipes', adminOnly: true },
+  { id: 'redistribuicao', label: 'Redistribuição', icon: AlertTriangle, path: '/redistribuicao', gestorOnly: true },
+  { id: 'usuarios', label: 'Usuários', icon: UserCog, path: '/usuarios', adminOnly: true },
+  { id: 'notificacoes', label: 'Notificações', icon: Bell, path: '/notificacoes' },
+  { id: 'perfil', label: 'Meu Perfil', icon: User, path: '/perfil' },
+];
+
+const NOMES_PAPEL: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor', gestor: 'Gestor' };
+
+function podeVer(item: MenuItem, papel?: string) {
+  if (item.adminOnly && papel !== 'admin') return false;
+  if (item.gestorOnly && !['admin', 'gestor'].includes(papel || '')) return false;
+  if (item.corretorOnly && papel !== 'corretor') return false;
+  return true;
+}
+
 export default function Sidebar({ children }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(() => authService.getUsuario());
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
   const handleLogout = async () => {
@@ -44,126 +73,12 @@ export default function Sidebar({ children }: SidebarProps) {
     setUsuario(null);
   };
 
-  const isActive = (path: string) => pathname === path;
-
-  const labelPapel = (papel: string) => {
-    const nomes: Record<string, string> = { admin: 'Administrador', corretor: 'Corretor', gestor: 'Gestor' };
-    return nomes[papel] || papel;
-  };
-
-  const menuItems: (
-    | { id: string; label: string; icon: React.ReactNode; path: string; adminOnly?: boolean; gestorOnly?: boolean; corretorOnly?: boolean }
-    | { id: string; submenu: { label: string; path: string; icon?: React.ReactNode }[]; adminOnly?: boolean; gestorOnly?: boolean; corretorOnly?: boolean }
-  )[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <Home size={20} />,
-      path: '/dashboard',
-    },
-    {
-      id: 'dashboard-gestor',
-      label: 'Dashboard Gestor',
-      icon: <BarChart3 size={20} />,
-      path: '/dashboard/gestor',
-      gestorOnly: true,
-    },
-    {
-      id: 'leads',
-      label: 'Leads',
-      icon: <Users size={20} />,
-      path: '/leads',
-    },
-     {
-      id: 'relogio-vendas',
-      label: 'Relógio de Vendas',
-      icon: <TrendingUp size={20} />,
-      path: '/relogio-vendas',
-    },
-    {
-      id: 'leads-exportar',
-      label: 'Exportar Leads',
-      icon: <FileText size={20} />,
-      path: '/leads/exportar',
-      corretorOnly: true,
-    },
-    {
-      id: 'properties',
-      label: 'Imóveis',
-      icon: <Building2 size={20} />,
-      path: '/properties',
-    },
-    {
-      id: 'empreendimentos',
-      label: 'Empreendimentos',
-      icon: <Building2 size={20} />,
-      path: '/empreendimentos',
-    },
-    {
-      id: 'equipes',
-      label: 'Equipes',
-      icon: <Building2 size={20} />,
-      path: '/equipes',
-      adminOnly: true,
-    },
-    {
-      id: 'redistribuicao',
-      label: 'Redistribuição',
-      icon: <AlertTriangle size={20} />,
-      path: '/redistribuicao',
-      gestorOnly: true,
-    },
-    {
-      id: 'usuarios',
-      label: 'Usuários',
-      icon: <UserCog size={20} />,
-      path: '/usuarios',
-      adminOnly: true,
-    },
-    {
-      id: 'notificacoes',
-      label: 'Notificações',
-      icon: <Bell size={20} />,
-      path: '/notificacoes',
-    },
-    {
-      id: 'perfil',
-      label: 'Meu Perfil',
-      icon: <User size={20} />,
-      path: '/perfil',
-    },
-    // {
-    //   id: 'analytics',
-    //   // label: 'Análises',
-    //   // icon: <BarChart3 size={20} />,
-    //   submenu: [
-    //     { label: 'Visão Geral', path: '/analytics', icon: <TrendingUp size={16} /> },
-    //     // { label: 'Por Período', path: '/analytics/period', icon: <Calendar size={16} /> },
-    //     // { label: 'Conversões', path: '/analytics/conversions', icon: <CheckCircle size={16} /> },
-    //     { label: 'Por Período', path: '/analytics', icon: <Calendar size={16} /> },
-    //     { label: 'Conversões', path: '/analytics', icon: <CheckCircle size={16} /> },
-    //   ],
-    // },
-    // {
-    //   id: 'reports',
-    //   label: 'Relatórios',
-    //   icon: <FileText size={20} />,
-    //   path: '/reports',
-    // },
-    // {
-    //   id: 'settings',
-    //   label: 'Configurações',
-    //   icon: <Settings size={20} />,
-    //   path: '/settings',
-    // },
-  ];
-
   return (
     <div className="relative min-h-screen bg-surface">
       {/* Botão hamburger - mobile */}
       {!isOpen && (
         <button
-          onClick={toggleSidebar}
+          onClick={() => setIsOpen(true)}
           className="fixed top-4 left-4 z-50 p-2 bg-card border border-line rounded-btn shadow-card lg:hidden hover:bg-surface"
         >
           <Menu size={24} className="text-brand-fg" />
@@ -212,7 +127,7 @@ export default function Sidebar({ children }: SidebarProps) {
           <p className="text-xs text-sidebar-fg/70 truncate">{usuario?.email || ''}</p>
           {usuario?.papel && (
             <span className="mt-2 inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-accent text-on-accent">
-              {labelPapel(usuario.papel)}
+              {NOMES_PAPEL[usuario.papel] || usuario.papel}
             </span>
           )}
         </div>
@@ -220,56 +135,22 @@ export default function Sidebar({ children }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 min-h-0 px-3 py-4 overflow-y-auto">
           <ul className="space-y-1">
-            {menuItems
-              .filter((item) => {
-                if ((item as any).adminOnly && usuario?.papel !== 'admin') return false;
-                if ((item as any).gestorOnly && !['admin','gestor'].includes(usuario?.papel || '')) return false;
-                if ((item as any).corretorOnly && usuario?.papel !== 'corretor') return false;
-                return true;
-              })
-              .map((item) => (
-                <li key={item.id}>
-                  {'submenu' in item ? (
-                    <ul>
-                      {item.submenu.map((subItem) => (
-                        <li key={subItem.path}>
-                          <Link
-                            href={subItem.path}
-                            onClick={closeSidebar}
-                            className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-btn transition-colors
-                              ${
-                                isActive(subItem.path)
-                                  ? 'bg-accent text-on-accent font-semibold'
-                                  : 'text-sidebar-fg hover:bg-white/10 hover:text-white'
-                              }
-                            `}
-                          >
-                            {subItem.icon}
-                            <span className="text-sm">{subItem.label}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <Link
-                      href={item.path}
-                      onClick={closeSidebar}
-                      className={`
-                        flex items-center gap-3 px-3 py-2.5 rounded-btn transition-colors
-                        ${
-                          isActive(item.path)
-                            ? 'bg-accent text-on-accent font-semibold'
-                            : 'text-sidebar-fg hover:bg-white/10 hover:text-white'
-                        }
-                      `}
-                    >
-                      {item.icon}
-                      <span className="text-sm">{item.label}</span>
-                    </Link>
-                  )}
-                </li>
-              ))}
+            {MENU_ITEMS.filter((item) => podeVer(item, usuario?.papel)).map(({ id, label, icon: Icon, path }) => (
+              <li key={id}>
+                <Link
+                  href={path}
+                  onClick={closeSidebar}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-btn transition-colors ${
+                    pathname === path
+                      ? 'bg-accent text-on-accent font-semibold'
+                      : 'text-sidebar-fg hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="text-sm">{label}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
 

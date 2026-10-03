@@ -87,8 +87,3 @@ export function parseApiError(error: any): ParsedApiError {
   }
   return { message: "Ocorreu um erro inesperado. Tente novamente.", raw: error }
 }
-
-export function getFieldError(fields: Record<string, string> | undefined, field: string): string | undefined {
-  if (!fields) return undefined
-  return fields[field] || fields[field.toLowerCase()] || fields[field.toUpperCase()]
-}

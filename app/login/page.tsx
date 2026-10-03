@@ -55,9 +55,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const response = await authService.login(email.trim(), senha);
-      console.log("response ", response)
       authService.salvarSessao(response);
-      console.log("Chegou até aqui")
       router.push(response.usuario.trocarSenha ? '/trocar-senha' : '/dashboard');
     } catch (err: any) {
       if (err.response?.status === 401) {

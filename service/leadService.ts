@@ -18,11 +18,6 @@ export const leadService = {
     return d
   },
 
-  async getMetrics() {
-    const response = await api.get('/leads/metrics');
-    return response.data;
-  },
-
   async exportarExcel(filtros: { search?: string; status?: string; month?: string; origem?: string; historico?: string }) {
     const q: any = {}
     if (filtros.search) q.search = filtros.search
@@ -36,7 +31,6 @@ export const leadService = {
 
   async cadastrar(data: any) {
     const response = await api.post("/leads/cadastrar", data)
-    console.log("response.data ", response.data)
     return response.data
   },
 
@@ -58,13 +52,6 @@ export const leadService = {
     return response.data;
   },
 
-  async getAguardando(equipeId?: number) {
-    const params: any = {}
-    if (equipeId) params.equipeId = equipeId
-    const res = await api.get("/leads/aguardando-redistribuicao", { params })
-    return res.data
-  },
-
   async getAguardandoResumo(params: { equipeId?: number; page?: number; size?: number } = {}) {
     const q: any = { includeResumo: true, page: params.page ?? 0, size: params.size ?? 50 }
     if (params.equipeId) q.equipeId = params.equipeId
@@ -74,11 +61,6 @@ export const leadService = {
 
   async redistribuir(leadId: number, novoCorretorId: number) {
     const res = await api.post("/leads/redistribuir", { leadId, novoCorretorId })
-    return res.data
-  },
-
-  async redistribuirPath(leadId: number, novoCorretorId: number) {
-    const res = await api.post(`/leads/${leadId}/redistribuir/${novoCorretorId}`)
     return res.data
   },
 

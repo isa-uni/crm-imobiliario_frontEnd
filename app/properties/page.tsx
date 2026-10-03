@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Imovel } from '@/types';
 import { imovelService } from '@/service/imovelService';
-//import { getImoveis, saveImovel, updateImovel, deleteImovel } from '@/lib/imoveis';
-import { 
-  Building2, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  MapPin, 
+import {
+  Building2,
+  Plus,
+  Edit,
+  Trash2,
+  MapPin,
   DollarSign,
   Maximize,
   BedDouble,
@@ -18,55 +17,59 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
 import { ErrorState } from '@/components/ui/ErrorState';
 
+type ImovelForm = Omit<Imovel, 'id' | 'dataCadastro' | 'dataAtualizacao' | 'valorVenda'> & { valorVenda: number | null };
+
+const FORM_VAZIO: ImovelForm = {
+  titulo: '',
+  endereco: '',
+  cidade: 'Londrina',
+  bairro: '',
+  valorVenda: null,
+  area: 0,
+  quartos: 0,
+  banheiros: 0,
+  vagas: 0,
+  status: 'disponivel',
+  descricao: '',
+};
+
+const STATUS_CONFIG = {
+  disponivel: { label: 'Disponível', color: 'bg-success-bg text-success', icon: CheckCircle },
+  vendido: { label: 'Vendido', color: 'bg-subtle text-muted', icon: XCircle },
+};
+
+const FILTROS_STATUS = ['all', 'disponivel', 'vendido'] as const;
+type FiltroStatus = (typeof FILTROS_STATUS)[number];
+
 export default function PropertiesPage() {
   const { toast } = useToast();
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
-  const [filteredImoveis, setFilteredImoveis] = useState<Imovel[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingImovel, setEditingImovel] = useState<Imovel | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState<any>({});
-  const [statusFilter, setStatusFilter] = useState<'all' | 'disponivel' | 'vendido'>('all');
+  const [statusFilter, setStatusFilter] = useState<FiltroStatus>('all');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({
-    titulo: '',
-    endereco: '',
-    cidade: 'Londrina',
-    bairro: '',
-    // cep: '',
-    valorVenda: null as number | null,
-    area: 0,
-    quartos: 0,
-    banheiros: 0,
-    vagas: 0,
-    status: 'disponivel' as Imovel['status'],
-    descricao: '',
-    // caracteristicas: [] as string[],
-  });
+  const [formData, setFormData] = useState<ImovelForm>(FORM_VAZIO);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    filterImoveis();
-  }, [imoveis, searchTerm, statusFilter]);
+  const filteredImoveis = useMemo(
+    () => (statusFilter === 'all' ? imoveis : imoveis.filter(i => i.status === statusFilter)),
+    [imoveis, statusFilter]
+  );
 
   const loadData = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await imovelService.getAll();
-      // const metricsData = await leadService.getMetrics();
-      setImoveis(data);
-      // setMetrics(metricsData);
+      setImoveis(await imovelService.getAll());
     } catch (e: any) {
       const parsed = parseApiError(e);
       setLoadError(parsed.message);
@@ -76,50 +79,19 @@ export default function PropertiesPage() {
     }
   };
 
-  const filterImoveis = () => {
-    let filtered = imoveis;
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(i => i.status === statusFilter);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(i =>
-        i.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.bairro.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.endereco.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredImoveis(filtered);
-  };
-
-  const handleSave = async (ImovelData: Omit<Imovel, 'id'| 'dataCadastro' | 'dataAtualizacao'>) => {
-    try{
+  const handleSave = async (imovelData: Omit<Imovel, 'id' | 'dataCadastro' | 'dataAtualizacao'>) => {
+    try {
       setErrors({});
-      const { descricao, ...rest } = ImovelData;
-
-      const payload = {
-        ...rest,
-        descricao,
-      };
-
       const isEditing = !!editingImovel;
       if (editingImovel) {
-        await imovelService.atualizar(editingImovel.id, payload);
+        await imovelService.atualizar(editingImovel.id, imovelData);
       } else {
-        await imovelService.cadastrar(payload);
+        await imovelService.cadastrar(imovelData);
       }
 
       await loadData();
-      setEditingImovel(null);
-      setErrors({}); 
-      //setIsModalOpen(false);
       closeModal();
       toast(isEditing ? 'Imóvel atualizado com sucesso.' : 'Imóvel cadastrado com sucesso.', 'success');
-      return true;
-      // loadData();
-      // closeModal();
     } catch (error: any) {
       const parsed = parseApiError(error);
       if (parsed.fields) {
@@ -128,21 +100,17 @@ export default function PropertiesPage() {
       } else {
         toast(parsed.message, 'error');
       }
-
-      return false;
     }
   };
 
   const handleEdit = (imovel: Imovel) => {
     setEditingImovel(imovel);
     setIsModalOpen(true);
-
     setFormData({
       titulo: imovel.titulo,
       endereco: imovel.endereco,
       cidade: imovel.cidade,
       bairro: imovel.bairro,
-      // cep: imovel.cep,
       valorVenda: imovel.valorVenda,
       area: imovel.area,
       quartos: imovel.quartos,
@@ -150,54 +118,25 @@ export default function PropertiesPage() {
       vagas: imovel.vagas,
       status: imovel.status,
       descricao: imovel.descricao,
-      // caracteristicas: imovel.caracteristicas,
     });
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Tem certeza que deseja excluir este imóvel?')) {
-      try {
-      await imovelService.inativar(id); 
-      await loadData(); // recarrega a lista
+    if (!confirm('Tem certeza que deseja excluir este imóvel?')) return;
+    try {
+      await imovelService.inativar(id);
+      await loadData();
       toast('Imóvel excluído com sucesso.', 'success');
     } catch (e: any) {
       toast(parseApiError(e).message, 'error');
-    }
-      // deleteImovel(id);
-      // loadData();
     }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingImovel(null);
-    setFormData({
-      titulo: '',
-      endereco: '',
-      cidade: 'Londrina',
-      bairro: '',
-      // cep: '',
-      valorVenda: null as number | null,
-      area: 0,
-      quartos: 0,
-      banheiros: 0,
-      vagas: 0,
-      status: 'disponivel',
-      descricao: '',
-      // caracteristicas: [],
-    });
+    setFormData(FORM_VAZIO);
   };
-
-  const statusConfig = {
-    disponivel: { label: 'Disponível', color: 'bg-success-bg text-success', icon: CheckCircle },
-    // reservado: { label: 'Reservado', color: 'bg-warning-bg text-warning', icon: Clock },
-    vendido: { label: 'Vendido', color: 'bg-subtle text-muted', icon: XCircle },
-  };
-
-  // <form onSubmit={(e) => {
-  //   e.preventDefault();
-  //   handleSave(formData);
-  // }}></form>
 
   return (
     <div className="min-h-screen bg-surface p-8">
@@ -246,17 +185,17 @@ export default function PropertiesPage() {
           {/* Filtros */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex gap-2">
-              {['all', 'disponivel', 'vendido'].map(status => (
+              {FILTROS_STATUS.map(status => (
                 <button
                   key={status}
-                  onClick={() => setStatusFilter(status as any)}
+                  onClick={() => setStatusFilter(status)}
                   className={`px-4 py-2 text-sm font-semibold rounded-btn transition-colors ${
                     statusFilter === status
                       ? 'bg-brand text-on-brand shadow-btn'
                       : 'bg-card text-muted hover:bg-card border border-line'
                   }`}
                 >
-                  {status === 'all' ? 'Todos' : statusConfig[status as keyof typeof statusConfig].label}
+                  {status === 'all' ? 'Todos' : STATUS_CONFIG[status].label}
                 </button>
               ))}
             </div>
@@ -274,7 +213,8 @@ export default function PropertiesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredImoveis.map(imovel => {
-                const StatusIcon = statusConfig[imovel.status].icon;
+                const status = STATUS_CONFIG[imovel.status];
+                const StatusIcon = status.icon;
                 return (
                   <div key={imovel.id} className="bg-card border border-line rounded-card shadow-card overflow-hidden hover:shadow-card-lg hover:border-focus transition-all">
                     <div className="h-40 bg-gradient-to-br from-brand-soft to-subtle flex items-center justify-center border-b border-line">
@@ -286,9 +226,9 @@ export default function PropertiesPage() {
                     <div className="p-5">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold text-ink">{imovel.titulo}</h3>
-                        <span className={`px-2.5 py-1 text-xs font-bold flex items-center gap-1 rounded-full ${statusConfig[imovel.status].color}`}>
+                        <span className={`px-2.5 py-1 text-xs font-bold flex items-center gap-1 rounded-full ${status.color}`}>
                           <StatusIcon size={12} />
-                          {statusConfig[imovel.status].label}
+                          {status.label}
                         </span>
                       </div>
 
@@ -387,31 +327,15 @@ export default function PropertiesPage() {
                     />
                     {errors.titulo && <p className="text-xs text-danger mt-1.5">{errors.titulo}</p>}
                   </div>
-{/* 
-                  <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Tipo <span className="text-danger">*</span></label>
-                    <select
-                      value={formData.tipo}
-                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
-                      className="w-full p-2 border border-line"
-                    >
-                      <option value="apartamento">Apartamento</option>
-                      <option value="casa">Casa</option>
-                      <option value="terreno">Terreno</option>
-                      <option value="comercial">Comercial</option>
-                      <option value="rural">Rural</option>
-                    </select>
-                  </div> */}
 
                   <div>
                     <label className="block text-sm font-medium text-muted mb-1">Status <span className="text-danger">*</span></label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Imovel['status'] })}
                       className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
                     >
                       <option value="disponivel">Disponível</option>
-                      {/* <option value="reservado">Reservado</option> */}
                       <option value="vendido">Vendido</option>
                     </select>
                   </div>
@@ -461,21 +385,10 @@ export default function PropertiesPage() {
                       onChange={(e) => setFormData({
                         ...formData, 
                         valorVenda: e.target.value === '' ? null : Number(e.target.value) })}
-                        // valorVenda: Number(e.target.value) })}
                       className="w-full p-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30 no-spinner"
                     />
                     {errors.valorVenda && <p className="text-xs text-danger mt-1.5">{errors.valorVenda}</p>}
                   </div>
-
-                  {/* <div>
-                    <label className="block text-sm font-medium text-muted mb-1">Valor Aluguel</label>
-                    <input
-                      type="number"
-                      value={formData.valorAluguel}
-                      onChange={(e) => setFormData({ ...formData, valorAluguel: Number(e.target.value) })}
-                      className="w-full p-2 border border-line"
-                    />
-                  </div> */}
 
                   <div>
                     <label className="block text-sm font-medium text-muted mb-1">Área (m²)</label>
@@ -547,17 +460,12 @@ export default function PropertiesPage() {
                   Cancelar
                 </button>
                 <button
-                 //onClick={handleSave}
-                  // type="submit"
                   type="submit"
-                  // onClick={() => handleSave(formData)}
-
                   className="flex-1 px-4 py-2.5 bg-brand text-on-brand rounded-btn font-semibold shadow-btn hover:bg-brand-hover transition-colors"
                 >
                   {editingImovel ? 'Salvar Alterações' : 'Cadastrar Imóvel'}
                 </button>
               </div>
-            {/* </div>*/}
             </form> 
           </div>
         )}

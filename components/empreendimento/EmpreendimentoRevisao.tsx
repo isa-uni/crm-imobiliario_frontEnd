@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react"
 import { empreendimentoIaService, ExtracaoDTO } from "@/service/empreendimentoIaService"
 import { useToast } from "@/components/ui/ToastProvider"
 import { parseApiError } from "@/lib/errorHandler"
-import { AlertTriangle, CheckCircle, FileText, RefreshCw, Loader2, Edit2 } from "lucide-react"
+import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 
 function Evidencia({ fonte, onUse }: { fonte: any; onUse?: (v:string)=>void }) {
   const confColor = fonte.confianca >=80 ? "bg-success-bg text-success" : fonte.confianca>=60 ? "bg-warning-bg text-warning" : "bg-danger-bg text-danger"

@@ -28,15 +28,4 @@ export const metaService = {
     return res.data
   },
 
-  async getByUsuarioEMes(usuarioId: number, mesReferencia: string): Promise<MetaDTO | null> {
-    try {
-      const res = await api.get("/dashboard/gestor/metas", { params: { mesReferencia } })
-      const lista: MetaDTO[] = res.data
-      return lista.find(m => m.usuarioId === usuarioId) || null
-    } catch (e: any) {
-      const status = e?.response?.status
-      if (status === 404 || status === 204) return null
-      throw e
-    }
-  }
 }

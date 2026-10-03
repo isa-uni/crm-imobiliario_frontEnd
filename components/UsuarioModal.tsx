@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Papel, Usuario, UsuarioPayload } from '@/types';
 import { X } from 'lucide-react';
 import InputMask from 'react-input-mask';
+import { formatarTelefoneInput } from '@/lib/format';
 
 interface UsuarioModalProps {
   isOpen: boolean;
@@ -15,13 +16,6 @@ interface UsuarioModalProps {
   usuarios?: Usuario[];
 }
 
-const formatarTelefone = (telefone: string) => {
-  return telefone
-    .replace(/\D/g, '')
-    .replace(/^(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2')
-    .slice(0, 15);
-};
 
 export default function UsuarioModal({
   isOpen,
@@ -53,7 +47,7 @@ export default function UsuarioModal({
         email: editingUsuario.email,
         cpf: editingUsuario.cpf,
         genero: editingUsuario.genero || 'M',
-        telefone: formatarTelefone(editingUsuario.telefone),
+        telefone: formatarTelefoneInput(editingUsuario.telefone),
         dataNascimento: editingUsuario.dataNascimento || '',
         papelId: String(
           papeis.find((p) => p.papel === editingUsuario.papel)?.id ?? ''

@@ -5,11 +5,12 @@ import { Lead, LeadStatus, Tramitacao } from '@/types';
 import { X, Phone, Mail, Calendar, DollarSign, Building2, MapPin, FileText, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { origemOptions } from '@/service/origemOptions';
 import { leadService } from '@/service/leadService';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
 import { InlineError } from '@/components/ui/ErrorState';
+import { formatarTelefone } from '@/lib/format';
+import { origemLabel } from '@/service/origemOptions';
 
 
 interface LeadViewModalProps {
@@ -69,16 +70,7 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
     'descarte': 'bg-danger-bg text-danger',
   };
 
-  const formatarTelefone = (telefone: string) => {
-    return telefone
-      .replace(/\D/g, '')
-      .replace(/^(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2');
-  };
 
-  const getOrigemLabel = (value: string) => {
-    return origemOptions.find((o) => o.value === value)?.label || value;
-  };
 
   const getStatusLabel = (status: LeadStatus | null) => {
     if (!status) return 'Criação';
@@ -188,7 +180,7 @@ export default function LeadViewModal({ lead, isOpen, onClose, onEdit }: LeadVie
                 </div>
                 <div>
                   <p className="text-xs text-muted mb-1">Origem do Lead</p>
-                  <p className="text-sm font-medium text-ink">{getOrigemLabel(lead.origem)}</p>
+                  <p className="text-sm font-medium text-ink">{origemLabel(lead.origem)}</p>
                 </div>
               </div>
 

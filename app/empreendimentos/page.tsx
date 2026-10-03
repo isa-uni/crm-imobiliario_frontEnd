@@ -4,12 +4,10 @@ import { Building2, Plus, Search } from "lucide-react"
 import { empreendimentoIaService, EmpreendimentoCard } from "@/service/empreendimentoIaService"
 import EmpreendimentoCardComp from "@/components/empreendimento/EmpreendimentoCard"
 import EmpreendimentoUploadModal from "@/components/empreendimento/EmpreendimentoUploadModal"
-import { useToast } from "@/components/ui/ToastProvider"
 import { parseApiError } from "@/lib/errorHandler"
 import { ErrorState } from "@/components/ui/ErrorState"
 
 export default function EmpreendimentosPage() {
-  const { toast } = useToast()
   const [cards, setCards] = useState<EmpreendimentoCard[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)

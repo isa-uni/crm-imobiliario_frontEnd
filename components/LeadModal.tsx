@@ -5,7 +5,7 @@ import { Lead, LeadStatus } from '@/types';
 import { origemOptions } from '@/service/origemOptions';
 import { historicoOptions } from '@/service/historicoOptions';
 import { empreendimentoIaService, EmpreendimentoCard } from '@/service/empreendimentoIaService';
-import { brl, faixa } from '@/lib/format';
+import { brl, faixa, formatarTelefone } from '@/lib/format';
 import { X } from 'lucide-react';
 import InputMask from 'react-input-mask';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -43,7 +43,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     historico: '',
     status: 'lead' as Lead['status'],
     valorInteresse: 0,
-    // tipoImovel: '',
     empreendimentoId: null,
     observacao: '',
     motivoDescarte: '',
@@ -54,12 +53,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
   const [empreendimentosError, setEmpreendimentosError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const formatarTelefone = (telefone: string) => {
-    return telefone
-      .replace(/\D/g, '')
-      .replace(/^(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2');
-  };
 
   useEffect(() => {
     if (editingLead) {
@@ -71,7 +64,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         historico: editingLead.historico,
         status: editingLead.status,
         valorInteresse: editingLead.valorInteresse,
-        // tipoImovel: editingLead.tipoImovel,
         empreendimentoId: editingLead.empreendimentoId ?? null,
         observacao: editingLead.observacao || '',
         motivoDescarte: editingLead.motivoDescarte || '',
@@ -85,7 +77,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
         historico: '',
         status: 'lead',
         valorInteresse: 0,
-        // tipoImovel: '',
         empreendimentoId: null,
         observacao: '',
         motivoDescarte: '',
@@ -114,8 +105,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
 }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("formData antes de salvar 3", formData);
-    
     e.preventDefault();
 
     setLoading(true);
@@ -129,8 +118,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
     // marca a intenção explícita de remover o empreendimento vinculado quando o campo é deixado em
     // branco — sem isso, o backend não teria como distinguir "não mudei este campo" de "quero limpar"
     const sucesso = await onSave({ ...formData, limparEmpreendimento: formData.empreendimentoId === null });
-    console.log('Sucesso no salvamento: ', sucesso);
-
 
     setLoading(false);
 
@@ -138,8 +125,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
       onClose();
     }
   };
-
-  //console.log("formData antes de salvar 1", formData);
 
   const handleEmpreendimentoSelect = (empreendimentoId: number | null) => {
     if (!empreendimentoId) {
@@ -195,19 +180,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
               />
             </div>
 
-            {/* <div>
-              <label className="block text-sm font-medium text-muted mb-1">
-                Telefone *
-              </label>
-              <input
-                type="tel"
-                required
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                className="w-full p-2 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-                placeholder="(11) 98765-4321"
-              />
-            </div> */}
             <div>
               <label className="block text-sm font-medium text-muted mb-1">
                 Telefone <span className="text-danger">*</span>
@@ -314,7 +286,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                     motivoDescarte: newStatus === 'descarte' ? formData.motivoDescarte : '',
                   });
                 }}
-                // onChange={(e) => setFormData({ ...formData, status: e.target.value as Lead['status'] })}
                 className="w-full p-2 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
               >
                 <option value="lead">Lead</option>
@@ -336,7 +307,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
                 type="number"
                 required
                 min="0"
-                // step="0.01"
                 value={formData.valorInteresse}
                 onChange={(e) => setFormData({
                   ...formData, 
@@ -375,19 +345,6 @@ export default function LeadModal({ isOpen, onClose, onSave, editingLead, errors
             )}
           </div>
 
-          {/* <div>
-            <label className="block text-sm font-medium text-muted mb-1">
-              Tipo de Imóvel *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.tipoImovel}
-              onChange={(e) => setFormData({ ...formData, tipoImovel: e.target.value })}
-              className="w-full p-2 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
-              placeholder="Apartamento 2 quartos"
-            />
-          </div> */}
 
           <div>
             <label className="block text-sm font-medium text-muted mb-1">

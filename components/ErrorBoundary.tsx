@@ -27,12 +27,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   handleReset = () => {
+    // tenta recuperar sem reload completo
     this.setState({ hasError: false, error: null })
-    // tenta recuperar sem reload completo se possível
-    if (typeof window !== 'undefined') {
-      // fallback: reload se erro persistir
-      // window.location.reload()
-    }
   }
 
   render() {

@@ -11,10 +11,6 @@ export const notificacaoService = {
     console.warn("[notificacoes] formato inesperado", d)
     return []
   },
-  async contarNaoLidas(): Promise<number> {
-    const res = await api.get("/notificacoes/nao-lidas")
-    return res.data.count
-  },
   async marcarLida(id: number): Promise<void> {
     await api.post(`/notificacoes/${id}/ler`)
   },

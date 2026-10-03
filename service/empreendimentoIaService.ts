@@ -190,14 +190,6 @@ export const empreendimentoIaService = {
     const res = await api.get(`/api/v1/empreendimentos/${id}/detalhe`)
     return res.data
   },
-  async detalhePorSlug(slug: string): Promise<EmpreendimentoDetalhe> {
-    const res = await api.get(`/api/v1/empreendimentos/slug/${slug}`)
-    return res.data
-  },
-  async duplicados(params: { nome?: string; codigo?: string; endereco?: string }) {
-    const res = await api.get("/api/v1/empreendimentos/duplicados", { params })
-    return res.data
-  },
   async reprocessar(extracaoId: number) {
     const res = await api.post(`/api/v1/empreendimentos/extracoes/${extracaoId}/reprocessar`)
     return res.data

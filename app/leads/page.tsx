@@ -7,7 +7,6 @@ import LeadsTable from '@/components/LeadsTable';
 import LeadModal from '@/components/LeadModal';
 import LeadViewModal from '@/components/LeadViewModal';
 import { Plus, Users } from 'lucide-react';
-import { format } from 'date-fns';
 import { useToast } from '@/components/ui/ToastProvider';
 import { parseApiError } from '@/lib/errorHandler';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -26,19 +25,12 @@ export default function LeadsPage() {
   const size = 20;
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [monthFilter, setMonthFilter] = useState("all");
 
+  // Troca de filtro volta para a página 0 (a tabela chama setPage(0) junto); um único carregamento por mudança
   useEffect(() => {
     loadData(page);
-  }, [page]);
-
-  // Ao alterar qualquer filtro, reseta para page 0 e garante reload mesmo quando já está em 0
-  useEffect(() => {
-    if (page === 0) loadData(0);
-    else setPage(0);
-  }, [searchTerm, statusFilter, monthFilter]);
+  }, [page, statusFilter]);
 
   // ouve redistribuição feita em outra aba (mesmo browser) e recarrega página 0
   useEffect(() => {
@@ -51,7 +43,7 @@ export default function LeadsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data: any = await leadService.getAll({ page: pageIndex, size, search: searchTerm || undefined, status: statusFilter !== "all" ? statusFilter : undefined, month: monthFilter !== "all" ? monthFilter : undefined });
+      const data: any = await leadService.getAll({ page: pageIndex, size, status: statusFilter !== "all" ? statusFilter : undefined });
       const content = Array.isArray(data?.content) ? data.content : Array.isArray(data) ? data : [];
       const safe = content.filter((x: any) => x && x.id != null);
       setLeads(safe);
@@ -73,12 +65,8 @@ export default function LeadsPage() {
   const handleSaveLead = async (leadData: Omit<Lead, 'id' | 'dataCriacao' | 'dataAtualizacao'>) => {
     try {
       setErrors({});
-      const { observacao, motivoDescarte, ...rest } = leadData;
-
       const payload = {
-        ...rest,
-        observacao,
-        motivoDescarte,
+        ...leadData,
         telefone: limparTelefone(leadData.telefone),
       };
 
@@ -92,7 +80,6 @@ export default function LeadsPage() {
         await loadData(0);
       }
       setEditingLead(null);
-      setErrors({});
       setIsModalOpen(false);
       toast(editingLead ? 'Lead atualizado com sucesso.' : 'Lead cadastrado com sucesso.', 'success');
       return true;
@@ -119,18 +106,6 @@ export default function LeadsPage() {
     setIsViewModalOpen(true);
   };
 
-  const handleDeleteLead = async (id: number) => {
-    if (confirm('Tem certeza que deseja excluir este lead?')) {
-      try {
-        await leadService.inativar(id);
-        await loadData(page);
-        toast('Lead inativado com sucesso.', 'success');
-      } catch (e: any) {
-        toast(parseApiError(e).message, 'error');
-      }
-    }
-  };
-
   const handleStatusChange = async (id: number, newStatus: Lead['status']) => {
     try {
       await leadService.atualizar(id, { status: newStatus });
@@ -139,35 +114,6 @@ export default function LeadsPage() {
     } catch (e: any) {
       toast(parseApiError(e).message, 'error');
     }
-  };
-
-  const handleExport = () => {
-    const safeLeads = Array.isArray(leads) ? leads : [];
-    const csvData = [
-      ['Nome', 'Telefone', 'Email', 'Status', 'Valor', 'Origem', 'Data Criação'],
-      ...safeLeads.map((lead) => [
-        lead.nome,
-        lead.telefone,
-        lead.email,
-        lead.status,
-        lead.valorInteresse.toString(),
-        // lead.tipoImovel,
-        lead.origem,
-        format(lead.dataCriacao, 'dd/MM/yyyy'),
-      ]),
-    ];
-
-    const csvContent = csvData.map((row) => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', `todos_leads_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -236,7 +182,7 @@ export default function LeadsPage() {
             <p className="text-muted animate-pulse">Carregando leads...</p>
           </div>
         ) : loadError ? (
-          <ErrorState message={loadError} onRetry={loadData} />
+          <ErrorState message={loadError} onRetry={() => loadData(page)} />
         ) : (
           <LeadsTable
             leads={Array.isArray(leads) ? leads : []}
@@ -247,13 +193,8 @@ export default function LeadsPage() {
             totalPages={totalPages}
             totalElements={totalElements}
             onPageChange={setPage}
-            serverSide
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            monthFilter={monthFilter}
-            onMonthFilterChange={setMonthFilter}
           />
         )}
 

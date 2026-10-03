@@ -62,11 +62,6 @@ export const dashboardGestorService = {
     return res.data
   },
 
-  async getMetas(mesReferencia: string) {
-    const res = await api.get("/dashboard/gestor/metas", { params: { mesReferencia } })
-    return res.data
-  },
-
   async salvarMeta(data: { usuarioId: number; mesReferencia: string; metaContratos: number }) {
     const res = await api.post("/dashboard/gestor/metas", data)
     return res.data

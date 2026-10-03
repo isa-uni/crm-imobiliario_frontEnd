@@ -3,17 +3,13 @@
 import { Lead } from "@/types";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tag } from "lucide-react";
-import { origemOptions } from "@/service/origemOptions";
+import { origemLabel } from "@/service/origemOptions";
 import { useThemeColors, chartSeries, chartTooltipStyle } from "@/hooks/useThemeColors";
 
 interface LeadOrigemChartProps {
   leads: Lead[]; //recebendo os leads
 }
 
-const origemLabel = (origem: string) => {
-  const opt = origemOptions.find((o) => o.value === origem);
-  return opt ? opt.label : origem; //convertendo o valor da origem para um nome amigável
-};
 
 export default function LeadOrigemChart({ leads }: LeadOrigemChartProps) { //espera receber uma lista de obj lead
   const cores = useThemeColors();

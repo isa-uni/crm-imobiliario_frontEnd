@@ -53,14 +53,6 @@ export interface Lead {
   statusAtribuicao?: StatusAtribuicao
 }
 
-export interface PipelineStage {
-  id: LeadStatus;
-  nome: string;
-  cor: string;
-  ordem: number;
-  taxaConversao?: number;
-}
-
 export interface Metrics {
   totalLeads: number;
   totalOportunidades: number;
@@ -82,7 +74,6 @@ export interface Imovel {
   endereco: string;
   cidade: string;
   bairro: string;
-  // cep: string;
   valorVenda: number;
   area: number; // m²
   quartos: number;
@@ -90,8 +81,6 @@ export interface Imovel {
   vagas: number;
   status: StatusImovel;
   descricao: string;
-  // caracteristicas: string[]; // Ex: ['piscina', 'churrasqueira', 'elevador']
-  // fotos?: string[]; // URLs das fotos
   dataCadastro: Date;
   dataAtualizacao: Date;
 }

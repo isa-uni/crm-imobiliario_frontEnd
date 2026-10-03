@@ -31,3 +31,16 @@ export function naoInformado(valor?: string | number | null): string {
   if (typeof valor === "string" && valor.trim() === "") return "Não informado"
   return String(valor)
 }
+
+/** (43) 99999-9999 */
+export function formatarTelefone(telefone?: string | null): string {
+  return (telefone || "")
+    .replace(/\D/g, "")
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+}
+
+/** Igual a formatarTelefone, limitado ao tamanho do campo de formulário. */
+export function formatarTelefoneInput(telefone?: string | null): string {
+  return formatarTelefone(telefone).slice(0, 15)
+}

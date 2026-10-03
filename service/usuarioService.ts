@@ -8,11 +8,6 @@ export const usuarioService = {
     return response.data
   },
 
-  async getById(id: number) {
-    const response = await api.get(`/usuarios/${id}`)
-    return response.data
-  },
-
   async getMe() {
     const response = await api.get("/usuarios/me")
     return response.data
