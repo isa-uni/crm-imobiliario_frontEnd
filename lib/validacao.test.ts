@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  campo, cpfValido, lerNumeroBR, mascaraTelefone, problemaCep, problemaCpf, problemaDataNascimento,
+  campo, cpfValido, gerarSenhaAleatoria, lerNumeroBR, mascaraTelefone, problemaCep, problemaCpf, problemaDataNascimento,
   problemaEmail, problemaInteiroNaoNegativo, problemaNome, problemaSenha, problemaTelefone, problemaUf,
   validarFormulario,
 } from './validacao'
@@ -91,6 +91,15 @@ describe('senha (mesma regra do backend)', () => {
     expect(problemaSenha('Abcdef12')).toBeNull()
     expect(problemaSenha('Ab1')).toBe('A nova senha deve ter pelo menos 8 caracteres.')
     expect(problemaSenha('abcdefgh')).toContain('fraca')
+  })
+  it('senha gerada sempre é forte, tem o tamanho pedido e varia', () => {
+    const geradas = Array.from({ length: 200 }, () => gerarSenhaAleatoria())
+    for (const s of geradas) {
+      expect(s).toHaveLength(12)
+      expect(problemaSenha(s)).toBeNull()
+      expect(s).toMatch(/[A-Z]/); expect(s).toMatch(/[a-z]/); expect(s).toMatch(/\d/); expect(s).toMatch(/[^A-Za-z0-9]/)
+    }
+    expect(new Set(geradas).size).toBe(geradas.length)
   })
 })
 

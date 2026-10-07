@@ -115,6 +115,29 @@ export function problemaSenha(valor: string): string | null {
 }
 
 /**
+ * Senha aleatória (crypto) que sempre passa em problemaSenha: um caractere de cada tipo + o resto sorteado.
+ * Sem caracteres ambíguos (0/O, 1/l/I) — o admin vai ditar ou colar a senha para o usuário.
+ */
+export function gerarSenhaAleatoria(tamanho = 12): string {
+  const grupos = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnpqrstuvwxyz', '23456789', '!@#$%&*?']
+  const todos = grupos.join('')
+  const sorteio = (max: number) => {
+    // rejeição para não favorecer os primeiros caracteres (viés do módulo)
+    const limite = Math.floor(0x100000000 / max) * max
+    const buf = new Uint32Array(1)
+    do crypto.getRandomValues(buf); while (buf[0] >= limite)
+    return buf[0] % max
+  }
+  const chars = grupos.map(g => g[sorteio(g.length)])
+  while (chars.length < Math.max(tamanho, grupos.length)) chars.push(todos[sorteio(todos.length)])
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = sorteio(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]]
+  }
+  return chars.join('')
+}
+
+/**
  * Lê um número digitado no padrão brasileiro: "250.000,50", "R$ 250.000", "45,5 m²" ou "250000.50".
  * Devolve null para vazio e NaN quando o texto não é um número — para a tela avisar, em vez de
  * descartar o valor em silêncio (antes "250.000,00" virava vazio e "250.000" virava 250).

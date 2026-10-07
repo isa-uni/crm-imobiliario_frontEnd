@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2, Copy, CheckCircle } from 'lucide-react';
+import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2, Copy, CheckCircle, Eye, EyeOff, Shuffle } from 'lucide-react';
 import { Usuario, Papel, UsuarioPayload } from '@/types';
 import { usuarioService } from '@/service/usuarioService';
 import { papelService } from '@/service/papelService';
@@ -11,7 +11,7 @@ import { notificarErro, textoDoErro, plural } from '@/lib/feedback';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ErrorState, InlineError } from '@/components/ui/ErrorState';
-import { problemaSenha } from '@/lib/validacao';
+import { problemaSenha, gerarSenhaAleatoria } from '@/lib/validacao';
 import UsuarioModal from '@/components/UsuarioModal';
 import PapelModal from '@/components/PapelModal';
 import InativacaoSemGestorModal, { type DecisaoSemGestor } from '@/components/InativacaoSemGestorModal';
@@ -33,6 +33,9 @@ export default function UsuariosPage() {
   const [senhaError, setSenhaError] = useState<string | null>(null);
   // erros por campo do modal de redefinição (antes: um texto só, abaixo dos dois campos)
   const [senhaCampos, setSenhaCampos] = useState<{ novaSenha?: string; confirmarSenha?: string }>({});
+  // senha gerada aparece em texto para o admin conferir/copiar antes de repassar
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [novaSenhaCopiada, setNovaSenhaCopiada] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -221,7 +224,29 @@ export default function UsuariosPage() {
     setConfirmarSenha('');
     setSenhaError(null);
     setSenhaCampos({});
+    setSenhaVisivel(false);
+    setNovaSenhaCopiada(false);
     setIsSenhaModalOpen(true);
+  };
+
+  const gerarNovaSenha = () => {
+    const senha = gerarSenhaAleatoria();
+    setNovaSenha(senha);
+    setConfirmarSenha(senha);
+    setSenhaCampos({});
+    setSenhaError(null);
+    setSenhaVisivel(true);
+    setNovaSenhaCopiada(false);
+  };
+
+  const copiarNovaSenha = async () => {
+    try {
+      await navigator.clipboard.writeText(novaSenha);
+      setNovaSenhaCopiada(true);
+      setTimeout(() => setNovaSenhaCopiada(false), 2500);
+    } catch {
+      toast('Não foi possível copiar automaticamente. Selecione a senha e copie manualmente.', 'warning');
+    }
   };
 
   const handleRedefinirSenha = async (e: React.FormEvent) => {
@@ -632,23 +657,57 @@ export default function UsuariosPage() {
                 </p>
 
                 <div>
-                  <label htmlFor="redefinir-novaSenha" className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    Nova senha <span className="text-danger" aria-hidden="true">*</span>
-                  </label>
-                  <input
-                    id="redefinir-novaSenha"
-                    type="password"
-                    autoComplete="new-password"
-                    value={novaSenha}
-                    aria-invalid={!!senhaCampos.novaSenha || undefined}
-                    aria-describedby={senhaCampos.novaSenha ? 'redefinir-novaSenha-erro' : 'redefinir-ajuda'}
-                    onChange={(e) => { setNovaSenha(e.target.value); setSenhaCampos(c => ({ ...c, novaSenha: undefined })); }}
-                    className={`w-full p-2.5 border rounded-btn focus:outline-none focus:ring-4 ${senhaCampos.novaSenha ? 'border-danger focus:ring-danger/25' : 'border-line focus:border-focus focus:ring-focus/30'}`}
-                    placeholder="Mínimo de 8 caracteres"
-                  />
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <label htmlFor="redefinir-novaSenha" className="block text-xs font-semibold text-muted uppercase tracking-wide">
+                      Nova senha <span className="text-danger" aria-hidden="true">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={gerarNovaSenha}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                    >
+                      <Shuffle size={13} aria-hidden="true" /> Gerar senha aleatória
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      id="redefinir-novaSenha"
+                      type={senhaVisivel ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      value={novaSenha}
+                      aria-invalid={!!senhaCampos.novaSenha || undefined}
+                      aria-describedby={senhaCampos.novaSenha ? 'redefinir-novaSenha-erro' : 'redefinir-ajuda'}
+                      onChange={(e) => { setNovaSenha(e.target.value); setNovaSenhaCopiada(false); setSenhaCampos(c => ({ ...c, novaSenha: undefined })); }}
+                      className={`w-full p-2.5 pr-20 border rounded-btn focus:outline-none focus:ring-4 ${senhaVisivel ? 'font-mono' : ''} ${senhaCampos.novaSenha ? 'border-danger focus:ring-danger/25' : 'border-line focus:border-focus focus:ring-focus/30'}`}
+                      placeholder="Mínimo de 8 caracteres"
+                    />
+                    <div className="absolute inset-y-0 right-1.5 flex items-center gap-0.5">
+                      {novaSenha && (
+                        <button
+                          type="button"
+                          onClick={copiarNovaSenha}
+                          title={novaSenhaCopiada ? 'Copiada!' : 'Copiar senha'}
+                          aria-label={novaSenhaCopiada ? 'Senha copiada' : 'Copiar senha'}
+                          className="p-1.5 rounded text-muted hover:text-ink hover:bg-surface"
+                        >
+                          {novaSenhaCopiada ? <CheckCircle size={16} className="text-success" aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSenhaVisivel(v => !v)}
+                        title={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+                        aria-label={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+                        aria-pressed={senhaVisivel}
+                        className="p-1.5 rounded text-muted hover:text-ink hover:bg-surface"
+                      >
+                        {senhaVisivel ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                      </button>
+                    </div>
+                  </div>
                   <InlineError id="redefinir-novaSenha-erro" message={senhaCampos.novaSenha} />
                   {!senhaCampos.novaSenha && (
-                    <p id="redefinir-ajuda" className="text-xs text-muted mt-1">8 ou mais caracteres, combinando pelo menos 3 destes tipos: maiúscula, minúscula, número e caractere especial.</p>
+                    <p id="redefinir-ajuda" className="text-xs text-muted mt-1">8 ou mais caracteres, combinando pelo menos 3 destes tipos: maiúscula, minúscula, número e caractere especial. Ou gere uma aleatória e copie para repassar ao usuário.</p>
                   )}
                 </div>
 
@@ -658,7 +717,7 @@ export default function UsuariosPage() {
                   </label>
                   <input
                     id="redefinir-confirmar"
-                    type="password"
+                    type={senhaVisivel ? 'text' : 'password'}
                     autoComplete="new-password"
                     value={confirmarSenha}
                     aria-invalid={!!senhaCampos.confirmarSenha || undefined}
