@@ -8,8 +8,6 @@ import {
   Search,
   Edit,
   Eye,
-  ChevronLeft,
-  ChevronRight,
   Archive,
   Phone,
   Mail,
@@ -19,6 +17,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatarTelefone } from '@/lib/format';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import Paginacao from '@/components/ui/Paginacao';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -29,7 +28,11 @@ interface LeadsTableProps {
   page: number;
   totalPages: number;
   totalElements: number;
+  size: number;
   onPageChange: (page: number) => void;
+  onSizeChange: (size: number) => void;
+  /** Contadores dos botões de filtro, calculados no servidor sobre todos os leads (GET /leads/resumo). */
+  contagens?: { ativos: number; arquivados: number; total: number } | null;
   statusFilter: string;
   onStatusFilterChange: (v: string) => void;
 }
@@ -45,7 +48,6 @@ export const STATUS_CONFIG: Record<Lead['status'], { label: string; color: strin
   'descarte': { label: 'Descarte', color: 'bg-danger-bg text-danger' },
 };
 
-const isArquivado = (lead: Lead) => lead.status === 'contrato' || lead.status === 'descarte';
 
 
 
@@ -57,7 +59,10 @@ export default function LeadsTable({
   page,
   totalPages,
   totalElements,
+  size,
   onPageChange,
+  onSizeChange,
+  contagens,
   statusFilter,
   onStatusFilterChange,
 }: LeadsTableProps) {
@@ -85,20 +90,20 @@ export default function LeadsTable({
             onClick={() => trocarFiltro('active')}
             className={filtroClass('active')}
           >
-            Ativos ({safeLeads.filter(l => !isArquivado(l)).length})
+            Ativos{contagens ? ` (${contagens.ativos})` : ''}
           </button>
           <button
             onClick={() => trocarFiltro('archived')}
             className={filtroClass('archived')}
           >
             <Archive size={16} className="inline mr-1" />
-            Arquivados ({safeLeads.filter(isArquivado).length})
+            Arquivados{contagens ? ` (${contagens.arquivados})` : ''}
           </button>
           <button
             onClick={() => trocarFiltro('all')}
             className={filtroClass('all')}
           >
-            Todos
+            Todos{contagens ? ` (${contagens.total})` : ''}
           </button>
         </div>
       </div>
@@ -213,30 +218,17 @@ export default function LeadsTable({
           )}
         </div>
 
-        {/* Paginação */}
-        {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-line flex flex-col sm:flex-row gap-2 items-center justify-between bg-surface text-sm">
-            <div className="text-muted text-xs sm:text-sm">
-              Página {page + 1} de {totalPages} • {totalElements} total • Mostrando {safeLeads.length} nesta página
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => onPageChange(Math.max(0, page - 1))}
-                disabled={page === 0}
-                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-card disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                <ChevronLeft size={16} /> Anterior
-              </button>
-              <button
-                onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
-                disabled={page + 1 >= totalPages}
-                className="flex-1 sm:flex-none px-3 py-2 border border-line rounded-btn text-sm font-medium text-ink hover:bg-card disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                Próxima <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Paginação (dados paginados no backend) */}
+        <Paginacao
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          quantidadeNaPagina={safeLeads.length}
+          size={size}
+          onPageChange={onPageChange}
+          onSizeChange={onSizeChange}
+          rotulo={['lead', 'leads']}
+        />
       </div>
     </div>
   );

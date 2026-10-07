@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserCog, Plus, Search, Edit, KeyRound, UserX, UserCheck, Shield, Users, X, Loader2, Trash2, Copy, CheckCircle, Eye, EyeOff, Shuffle } from 'lucide-react';
 import { Usuario, Papel, UsuarioPayload } from '@/types';
 import { usuarioService } from '@/service/usuarioService';
@@ -12,14 +12,24 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ErrorState, InlineError } from '@/components/ui/ErrorState';
 import { problemaSenha, gerarSenhaAleatoria } from '@/lib/validacao';
+import Paginacao from '@/components/ui/Paginacao';
 import UsuarioModal from '@/components/UsuarioModal';
 import PapelModal from '@/components/PapelModal';
 import InativacaoSemGestorModal, { type DecisaoSemGestor } from '@/components/InativacaoSemGestorModal';
 import { fluxoDeInativacao, mensagemInativacao, type PreviaInativacao } from '@/lib/redistribuicao';
 
 export default function UsuariosPage() {
+  // só a página atual: busca, filtros e paginação são feitos no backend (GET /usuarios?page=&size=)
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [papeis, setPapeis] = useState<Papel[]>([]);
+  // gestores/admins (lista completa) para os seletores de gestor dos modais — não dependem da página visível
+  const [gestores, setGestores] = useState<Usuario[]>([]);
+  const [resumo, setResumo] = useState<{ total: number; ativos: number; inativos: number; porPapel: Record<string, number> } | null>(null);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [papelFilter, setPapelFilter] = useState('all');
   const [ativoFilter, setAtivoFilter] = useState<'all' | 'ativos' | 'inativos'>('all');
@@ -51,25 +61,64 @@ export default function UsuariosPage() {
 
   const meId = authService.getUsuario()?.id;
 
-  const loadData = async () => {
-    const [usuariosData, papeisData] = await Promise.all([
-      usuarioService.getAll(),
-      papelService.getAll(),
-    ]);
-    setUsuarios(usuariosData);
-    setPapeis(papeisData);
+  /** Uma nova requisição por página/filtro: o backend devolve só os registros da página. */
+  const ultimaRequisicao = useRef(0);
+  const loadPagina = async () => {
+    const id = ++ultimaRequisicao.current;
+    const data = await usuarioService.getPaginado({
+      page, size, search,
+      papel: papelFilter,
+      status: ativoFilter === 'all' ? undefined : ativoFilter,
+    });
+    // trocas rápidas de página/filtro: só a resposta da última requisição vale
+    if (id !== ultimaRequisicao.current) return;
+    const content = Array.isArray(data?.content) ? data.content : [];
+    // a página deixou de existir (ex.: filtro mudou o total): vai para a última que existe
+    if (content.length === 0 && page > 0 && data.totalPages > 0) {
+      setPage(data.totalPages - 1);
+      return;
+    }
+    setUsuarios(content);
+    setTotalPages(data.totalPages ?? 0);
+    setTotalElements(data.totalElements ?? 0);
   };
 
-  const carregar = () => {
+  /** Papéis, contadores (sobre todos os usuários) e a lista de gestores dos modais. */
+  const loadApoio = async () => {
+    const [papeisData, resumoData, gestoresData] = await Promise.all([
+      papelService.getAll(),
+      usuarioService.getResumo(),
+      usuarioService.getAll({ papel: 'gestor,admin' }),
+    ]);
+    setPapeis(papeisData);
+    setResumo(resumoData);
+    setGestores(gestoresData);
+  };
+
+  const loadData = () => Promise.all([loadPagina(), loadApoio()]);
+
+  // o "carregando" é da tabela (página); papéis/contadores atualizam sem piscar a tela
+  const carregar = (comApoio = false) => {
     setLoading(true);
     setLoadError(null);
-    loadData()
+    (comApoio ? loadData() : loadPagina())
       // motivo real (sem permissão, sem conexão, erro do servidor com código de referência)
       .catch((err: any) => setLoadError(textoDoErro(parseApiError(err))))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    loadApoio().catch((err: any) => setLoadError(textoDoErro(parseApiError(err))));
+  }, []);
+  useEffect(() => { carregar(); }, [page, size, search, papelFilter, ativoFilter]);
+
+  // busca no servidor só depois que a pessoa para de digitar (evita uma requisição por tecla)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (searchInput.trim() !== search) { setSearch(searchInput.trim()); setPage(0); }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const copiarSenha = async () => {
     if (!senhaTemporaria) return;
@@ -82,29 +131,14 @@ export default function UsuariosPage() {
     }
   };
 
-  const filteredUsuarios = useMemo(() => {
-    return usuarios.filter((u) => {
-      const matchesSearch =
-        !search ||
-        u.nome.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.matricula.toLowerCase().includes(search.toLowerCase());
-
-      const matchesPapel = papelFilter === 'all' || u.papel === papelFilter;
-      const matchesAtivo =
-        ativoFilter === 'all' ||
-        (ativoFilter === 'ativos' && u.ativo) ||
-        (ativoFilter === 'inativos' && !u.ativo);
-
-      return matchesSearch && matchesPapel && matchesAtivo;
-    });
-  }, [usuarios, search, papelFilter, ativoFilter]);
-
-  const stats = useMemo(() => ({
-    total: usuarios.length,
-    ativos: usuarios.filter((u) => u.ativo).length,
-    inativos: usuarios.filter((u) => !u.ativo).length,
-  }), [usuarios]);
+  // contadores calculados no servidor sobre todos os usuários (GET /usuarios/resumo), não só a página visível
+  const stats = {
+    total: resumo?.total ?? '—',
+    ativos: resumo?.ativos ?? '—',
+    inativos: resumo?.inativos ?? '—',
+  };
+  const qtdPorPapel = (papel: string) => resumo?.porPapel?.[papel] ?? 0;
+  const filtrando = !!search || papelFilter !== 'all' || ativoFilter !== 'all';
 
   const handleSaveUsuario = async (payload: UsuarioPayload) => {
     try {
@@ -142,7 +176,7 @@ export default function UsuariosPage() {
       await usuarioService.inativar(usuario.id, decisao?.tipo === 'vincular' ? { gestorId: decisao.gestorId }
         : decisao?.tipo === 'assumir' ? { semGestor: true } : {});
       const n = previa?.leadsAtribuidos ?? 0;
-      const gestorNome = decisao?.tipo === 'vincular' ? usuarios.find(u => u.id === decisao.gestorId)?.nome : previa?.gestorNome;
+      const gestorNome = decisao?.tipo === 'vincular' ? gestores.find(u => u.id === decisao.gestorId)?.nome : previa?.gestorNome;
       const leadsTxt = n === 1 ? '1 lead aguarda' : `${n} leads aguardam`;
       toast(n === 0
         ? `${usuario.nome} foi desativado.`
@@ -293,7 +327,7 @@ export default function UsuariosPage() {
   };
 
   const handleDeletePapel = async (papel: Papel) => {
-    const count = usuarios.filter((u) => u.papel === papel.papel).length;
+    const count = qtdPorPapel(papel.papel);
     // o backend apenas inativa o papel (PapelController.excluir): ele some das listas, mas os vínculos ficam
     const ok = await confirmar({
       titulo: `Excluir o papel "${papel.papel}"?`,
@@ -371,7 +405,7 @@ export default function UsuariosPage() {
 
         {loadError && !loading && (
           <div className="mb-6">
-            <ErrorState message="Não foi possível carregar os usuários." details={loadError} onRetry={carregar} />
+            <ErrorState message="Não foi possível carregar os usuários." details={loadError} onRetry={() => carregar(true)} />
           </div>
         )}
 
@@ -410,7 +444,7 @@ export default function UsuariosPage() {
             {papeis.map((p) => {
               // mesma lista do backend (PapelController.PAPEIS_DE_SISTEMA): as regras de negócio dependem destes papéis
               const isSystem = ['admin', 'gestor', 'corretor'].includes(p.papel);
-              const count = usuarios.filter((u) => u.papel === p.papel).length;
+              const count = qtdPorPapel(p.papel);
               return (
                 <span
                   key={p.id}
@@ -449,15 +483,15 @@ export default function UsuariosPage() {
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Buscar por nome, e-mail ou matrícula..."
                 className="w-full pl-10 pr-4 py-2.5 border border-line rounded-btn focus:outline-none focus:border-focus focus:ring-4 focus:ring-focus/30"
               />
             </div>
             <select
               value={papelFilter}
-              onChange={(e) => setPapelFilter(e.target.value)}
+              onChange={(e) => { setPapelFilter(e.target.value); setPage(0); }}
               className="px-3 py-2.5 border border-line rounded-btn focus:outline-none focus:border-focus"
             >
               <option value="all">Todos os papéis</option>
@@ -469,7 +503,7 @@ export default function UsuariosPage() {
             </select>
             <select
               value={ativoFilter}
-              onChange={(e) => setAtivoFilter(e.target.value as any)}
+              onChange={(e) => { setAtivoFilter(e.target.value as any); setPage(0); }}
               className="px-3 py-2.5 border border-line rounded-btn focus:outline-none focus:border-focus"
             >
               <option value="all">Todos os status</option>
@@ -486,10 +520,10 @@ export default function UsuariosPage() {
               <Loader2 size={32} className="animate-spin text-brand-fg" aria-hidden="true" />
               <p className="text-sm text-muted">Carregando usuários...</p>
             </div>
-          ) : loadError ? null : filteredUsuarios.length === 0 ? (
+          ) : loadError ? null : usuarios.length === 0 ? (
             <div className="text-center py-12">
               <Users size={48} className="mx-auto text-muted mb-4" aria-hidden="true" />
-              {usuarios.length === 0 ? (
+              {!filtrando ? (
                 <>
                   <p className="text-muted text-lg">Nenhum usuário cadastrado ainda.</p>
                   <button
@@ -517,7 +551,7 @@ export default function UsuariosPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {filteredUsuarios.map((usuario) => {
+                  {usuarios.map((usuario) => {
                     const isMe = usuario.id === meId;
                     return (
                       <tr key={usuario.id} className="hover:bg-surface">
@@ -597,6 +631,18 @@ export default function UsuariosPage() {
               </table>
             </div>
           )}
+          {!loading && !loadError && (
+            <Paginacao
+              page={page}
+              totalPages={totalPages}
+              totalElements={totalElements}
+              quantidadeNaPagina={usuarios.length}
+              size={size}
+              onPageChange={setPage}
+              onSizeChange={(n) => { setSize(n); setPage(0); }}
+              rotulo={['usuário', 'usuários']}
+            />
+          )}
         </div>
 
         {/* Modais */}
@@ -611,13 +657,13 @@ export default function UsuariosPage() {
           editingUsuario={editingUsuario}
           papeis={papeis}
           errors={errors}
-          usuarios={usuarios}
+          usuarios={gestores}
         />
 
         {previaSemGestor && (
           <InativacaoSemGestorModal
             previa={previaSemGestor.previa}
-            usuarios={usuarios}
+            usuarios={gestores}
             meuNome={authService.getUsuario()?.nome ?? 'você'}
             enviando={inativando}
             erro={erroSemGestor}

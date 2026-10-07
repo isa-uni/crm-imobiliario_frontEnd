@@ -23,16 +23,22 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const size = 20;
+  const [size, setSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [resumo, setResumo] = useState<{ total: number; ativos: number; contratos: number; esteMes: number } | null>(null);
+  const [resumo, setResumo] = useState<{ total: number; ativos: number; arquivados: number; contratos: number; esteMes: number } | null>(null);
 
-  // Troca de filtro volta para a página 0 (a tabela chama setPage(0) junto); um único carregamento por mudança
+  // Troca de filtro/tamanho volta para a página 0 (setPage(0) junto); um único carregamento por mudança.
+  // Cada página é uma nova requisição: o backend devolve só os registros dela (Page).
   useEffect(() => {
     loadData(page);
-  }, [page, statusFilter]);
+  }, [page, size, statusFilter]);
+
+  const trocarTamanho = (novo: number) => {
+    setSize(novo);
+    setPage(0);
+  };
 
   // ouve redistribuição feita em outra aba (mesmo browser) e recarrega página 0
   useEffect(() => {
@@ -48,6 +54,11 @@ export default function LeadsPage() {
       const data: any = await leadService.getAll({ page: pageIndex, size, status: statusFilter !== "all" ? statusFilter : undefined });
       const content = Array.isArray(data?.content) ? data.content : Array.isArray(data) ? data : [];
       const safe = content.filter((x: any) => x && x.id != null);
+      // a página deixou de existir (ex.: o último lead dela foi arquivado): vai para a última que existe
+      if (safe.length === 0 && pageIndex > 0 && (data?.totalPages ?? 0) > 0) {
+        setPage(data.totalPages - 1);
+        return;
+      }
       setLeads(safe);
       setTotalPages(data?.totalPages ?? (safe.length ? 1 : 0));
       setTotalElements(data?.totalElements ?? safe.length);
@@ -79,7 +90,7 @@ export default function LeadsPage() {
         await loadData(page);
       } else {
         await leadService.cadastrar(payload);
-        // garante que novo lead (sempre no topo DESC dataAtualizacao) apareça na primeira página size 20
+        // garante que novo lead (sempre no topo DESC dataAtualizacao) apareça na primeira página
         if (page !== 0) setPage(0);
         await loadData(0);
       }
@@ -189,7 +200,10 @@ export default function LeadsPage() {
             page={page}
             totalPages={totalPages}
             totalElements={totalElements}
+            size={size}
             onPageChange={setPage}
+            onSizeChange={trocarTamanho}
+            contagens={resumo}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
           />

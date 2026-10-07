@@ -1,11 +1,29 @@
 import { api } from "./api"
-import type { PerfilPayload, UsuarioPayload } from "@/types"
+import type { Page, PerfilPayload, Usuario, UsuarioPayload } from "@/types"
 import type { PreviaInativacao } from "@/lib/redistribuicao"
 
 export const usuarioService = {
 
-  async getAll() {
-    const response = await api.get("/usuarios")
+  /** Lista completa (sem paginação), para seletores. `papel` restringe, ex.: "gestor,admin". */
+  async getAll(params?: { papel?: string }): Promise<Usuario[]> {
+    const response = await api.get("/usuarios", params?.papel ? { params: { papel: params.papel } } : undefined)
+    return response.data
+  },
+
+  /** Uma página de usuários; busca, papel e status são aplicados no servidor antes de paginar. */
+  async getPaginado(params: { page: number; size: number; search?: string; papel?: string; status?: 'ativos' | 'inativos'; sort?: string }): Promise<Page<Usuario>> {
+    const q: Record<string, any> = { page: params.page, size: params.size }
+    if (params.search?.trim()) q.search = params.search.trim()
+    if (params.papel && params.papel !== 'all') q.papel = params.papel
+    if (params.status) q.status = params.status
+    if (params.sort) q.sort = params.sort
+    const response = await api.get("/usuarios", { params: q })
+    return response.data
+  },
+
+  /** Contadores da tela de Usuários (total, ativos, inativos, por papel) sobre todos os usuários. */
+  async getResumo(): Promise<{ total: number; ativos: number; inativos: number; porPapel: Record<string, number> }> {
+    const response = await api.get("/usuarios/resumo")
     return response.data
   },
 

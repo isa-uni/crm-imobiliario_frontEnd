@@ -19,7 +19,7 @@ export const leadService = {
   },
 
   /** Contadores dos cards da tela de Leads, calculados no servidor sobre todos os leads do escopo. */
-  async getResumo(): Promise<{ total: number; ativos: number; contratos: number; esteMes: number }> {
+  async getResumo(): Promise<{ total: number; ativos: number; arquivados: number; contratos: number; esteMes: number }> {
     const response = await api.get("/leads/resumo")
     return response.data
   },
