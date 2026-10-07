@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Lead, Imovel } from '@/types';
+import { Lead } from '@/types';
 import { 
   TrendingUp, 
   Users, 
-  Building2, 
   Target,
   DollarSign,
   ArrowUp,
@@ -18,7 +17,6 @@ import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { authService } from '@/service/authService';
 import { leadService } from '@/service/leadService';
-import { imovelService } from '@/service/imovelService';
 import Funil from "@/components/FunilDashboard";
 import LeadOrigemChart from "@/components/LeadOrigemChart";
 import LeadImovelChart from "@/components/LeadImovelChart";
@@ -30,7 +28,6 @@ import { textoDoErro } from '@/lib/feedback';
 
 export default function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [nome, setNome] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,16 +42,11 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [dataLead, dataImovel] = await Promise.all([
-        // lista completa (já restrita ao escopo do usuário pelo backend): as métricas do mês e os
-        // gráficos precisam de todos os leads, não só da primeira página
-        leadService.getAll(),
-        imovelService.getAll(),
-      ]);
+      // lista completa (já restrita ao escopo do usuário pelo backend): as métricas do mês e os
+      // gráficos precisam de todos os leads, não só da primeira página
+      const dataLead = await leadService.getAll();
       const list = Array.isArray((dataLead as any)?.content) ? (dataLead as any).content : Array.isArray(dataLead) ? dataLead : [];
       setLeads(list.filter((x:any)=> x && x.id != null));
-      const listImovel = Array.isArray((dataImovel as any)?.content) ? (dataImovel as any).content : Array.isArray(dataImovel) ? dataImovel : [];
-      setImoveis(Array.isArray(listImovel) ? listImovel : []);
     } catch (e: any) {
       // exibido uma vez, no lugar do painel, com "Tentar novamente" (antes: também um toast repetido)
       setError(textoDoErro(parseApiError(e)));
@@ -229,17 +221,6 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink group-hover:text-brand-fg transition-colors truncate">Gerenciar Leads</p>
                     <p className="text-xs text-muted truncate">{leads.length} leads</p>
-                  </div>
-                  <ArrowUpRight size={15} className="text-line group-hover:text-brand-fg group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
-                </Link>
-
-                <Link href="/properties" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-success-bg text-success flex items-center justify-center">
-                    <Building2 size={18} />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink group-hover:text-brand-fg transition-colors truncate">Imóveis</p>
-                    <p className="text-xs text-muted truncate">{imoveis.filter(i => i.status === 'disponivel').length} disponíveis</p>
                   </div>
                   <ArrowUpRight size={15} className="text-line group-hover:text-brand-fg group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
                 </Link>

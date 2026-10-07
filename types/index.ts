@@ -70,25 +70,6 @@ export interface Metrics {
   valorTotalFechado: number;
 }
 
-export type StatusImovel = 'disponivel' | 'vendido';
-
-export interface Imovel {
-  id: number;
-  titulo: string;
-  endereco: string;
-  cidade: string;
-  bairro: string;
-  valorVenda: number;
-  area: number; // m²
-  quartos: number;
-  banheiros: number;
-  vagas: number;
-  status: StatusImovel;
-  descricao: string;
-  dataCadastro: Date;
-  dataAtualizacao: Date;
-}
-
 export interface Usuario {
   id: number;
   nome: string;

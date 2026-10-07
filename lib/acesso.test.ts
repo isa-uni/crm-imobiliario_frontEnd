@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { podeAcessarRota, podeVerNoMenu, regraDaRota } from './acesso'
 
 // Telas citadas no problema de acesso + as demais do menu
-const TELAS_TODOS = ['/dashboard', '/leads', '/relogio-vendas', '/properties', '/empreendimentos', '/perfil']
+const TELAS_TODOS = ['/dashboard', '/leads', '/relogio-vendas', '/empreendimentos', '/perfil']
 
 describe('regras de acesso às telas (menu e guarda de rotas)', () => {
   describe('telas abertas a qualquer usuário logado', () => {

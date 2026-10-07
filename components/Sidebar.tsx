@@ -41,7 +41,6 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },
   { id: 'relogio-vendas', label: 'Relógio de Vendas', icon: TrendingUp, path: '/relogio-vendas' },
   { id: 'leads-exportar', label: 'Exportar Leads', icon: FileText, path: '/leads/exportar' },
-  { id: 'properties', label: 'Imóveis', icon: Building2, path: '/properties' },
   { id: 'empreendimentos', label: 'Empreendimentos', icon: Building2, path: '/empreendimentos' },
   { id: 'equipes', label: 'Equipes', icon: Building2, path: '/equipes' },
   { id: 'redistribuicao', label: 'Redistribuição', icon: AlertTriangle, path: '/redistribuicao' },
